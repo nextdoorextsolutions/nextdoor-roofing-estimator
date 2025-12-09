@@ -117,11 +117,20 @@ export const appRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
-        const baseUrl = ENV.forgeApiUrl.replace(/\/+$/, "");
-        const apiKey = ENV.forgeApiKey;
+        // Use the Google Solar API key directly with solar.googleapis.com
+        const solarApiKey = ENV.googleSolarApiKey;
         
-        // Call Google Solar API buildingInsights endpoint
-        const solarUrl = `${baseUrl}/v1/maps/proxy/v1/buildingInsights:findClosest?location.latitude=${input.lat}&location.longitude=${input.lng}&requiredQuality=HIGH&key=${apiKey}`;
+        if (!solarApiKey) {
+          console.error("Google Solar API key not configured");
+          return {
+            solarApiAvailable: false,
+            roofData: null,
+            satelliteImageUrl: getStaticMapUrl(input.lat, input.lng),
+          };
+        }
+        
+        // Call Google Solar API buildingInsights endpoint directly
+        const solarUrl = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${input.lat}&location.longitude=${input.lng}&requiredQuality=HIGH&key=${solarApiKey}`;
         
         const response = await fetch(solarUrl);
         
