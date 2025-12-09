@@ -44,3 +44,13 @@
 - [x] Make address input text black for visibility
 - [x] Keep button text as "Get Estimate" (not showing typed address)
 - [x] Fix Solar API not returning satellite data - updated to use solar.googleapis.com directly
+
+## New Features - Call Now Button & Sales Pipeline UI
+- [x] Add fancy Call Now button with phone number 727-318-0006
+- [x] Implement glassmorphism container (bg-slate-900/80, backdrop-blur-xl, border-white/10)
+- [x] Create neon teal glow effect for active states (shadow-[0_0_20px_rgba(45,212,191,0.5)])
+- [x] Design sales pipeline with completed/active/future stage styling
+- [x] Add golden/amber glow for "Closed Deal" node with house+dollar icon
+- [x] Implement pulsing heartbeat animation for active "Closed Deal" state
+- [x] Make Next button a primary action (solid green/teal background)
+- [x] Fix flow logic to show completed stages with bright connecting lines

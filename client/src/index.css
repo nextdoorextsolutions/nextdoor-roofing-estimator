@@ -189,3 +189,93 @@
     }
   }
 }
+
+/* Custom Animations */
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.1);
+  }
+  50% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(45, 212, 191, 0.5), 0 0 40px rgba(45, 212, 191, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(45, 212, 191, 0.7), 0 0 60px rgba(45, 212, 191, 0.4);
+  }
+}
+
+@keyframes golden-pulse {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(251, 191, 36, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(251, 191, 36, 0.8), 0 0 70px rgba(251, 191, 36, 0.5);
+  }
+}
+
+@keyframes phone-ring {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: rotate(-10deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: rotate(10deg);
+  }
+}
+
+/* Utility Classes for Neon Effects */
+.neon-teal {
+  box-shadow: 0 0 20px rgba(45, 212, 191, 0.5), 0 0 40px rgba(45, 212, 191, 0.3);
+}
+
+.neon-teal-strong {
+  box-shadow: 0 0 30px rgba(45, 212, 191, 0.7), 0 0 60px rgba(45, 212, 191, 0.4), 0 0 80px rgba(45, 212, 191, 0.2);
+}
+
+.neon-gold {
+  box-shadow: 0 0 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(251, 191, 36, 0.3);
+}
+
+.neon-gold-strong {
+  box-shadow: 0 0 35px rgba(251, 191, 36, 0.8), 0 0 70px rgba(251, 191, 36, 0.5), 0 0 100px rgba(251, 191, 36, 0.3);
+}
+
+.glassmorphism {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.animate-golden-pulse {
+  animation: golden-pulse 2s ease-in-out infinite;
+}
+
+.animate-phone-ring {
+  animation: phone-ring 0.5s ease-in-out;
+}
+
+.animate-phone-ring:hover {
+  animation: phone-ring 0.5s ease-in-out infinite;
+}

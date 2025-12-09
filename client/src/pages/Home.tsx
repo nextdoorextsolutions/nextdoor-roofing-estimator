@@ -16,8 +16,10 @@ import {
   CheckCircle2, 
   ArrowRight,
   Loader2,
-  RotateCcw
+  RotateCcw,
+  Phone
 } from "lucide-react";
+import { CallNowButton } from "@/components/CallNowButton";
 import type { RoofData, EstimateResult } from "../../../shared/roofing";
 
 type Step = "address" | "analyzing" | "lead-capture" | "results" | "manual-quote" | "manual-submitted";
@@ -216,17 +218,20 @@ export default function Home() {
                 <p className="text-xs text-gray-400">Professional Roofing Solutions</p>
               </div>
             </div>
-            {step !== "address" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleStartOver}
-                className="text-white border-white/30 hover:bg-white/10"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Start Over
-              </Button>
-            )}
+            <div className="flex items-center gap-4">
+              <CallNowButton variant="compact" />
+              {step !== "address" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleStartOver}
+                  className="text-white border-white/30 hover:bg-white/10"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Start Over
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -277,6 +282,11 @@ export default function Home() {
                   <Award className="h-5 w-5 text-primary" />
                   <span>5-Star Rated</span>
                 </div>
+              </div>
+
+              {/* Hero Call Now Button */}
+              <div className="mt-10 flex justify-center">
+                <CallNowButton variant="hero" />
               </div>
             </div>
           </div>
