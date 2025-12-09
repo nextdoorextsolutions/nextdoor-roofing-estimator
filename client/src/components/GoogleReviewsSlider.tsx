@@ -12,55 +12,71 @@ interface Review {
   location?: string;
 }
 
-// Sample 5-star reviews - these can be replaced with actual Google Reviews API data
+// Actual 5-star reviews from NextDoor Exterior Solutions Google Business Profile
 const reviews: Review[] = [
   {
     id: 1,
-    name: "Michael Thompson",
+    name: "Vicente",
     rating: 5,
-    text: "NextDoor Exterior Solutions did an amazing job on our roof! From the initial estimate to the final cleanup, everything was professional and on time. Highly recommend!",
-    date: "2 weeks ago",
-    location: "Clearwater, FL"
+    text: "Drew the owner was awesome. Jim the salesman was awesome and explained everything and kept in touch of the steps of the roof. Great communication with every step. His crew is great and did an awesome job on my metal roof. It's so much cooler in the house now and looks beautiful!",
+    date: "3 weeks ago",
+    location: "Florida"
   },
   {
     id: 2,
-    name: "Sarah Johnson",
+    name: "Guillermo",
     rating: 5,
-    text: "Best roofing company in the Tampa Bay area! They helped us navigate our insurance claim and the new roof looks fantastic. The crew was respectful and efficient.",
-    date: "1 month ago",
-    location: "St. Petersburg, FL"
+    text: "We had such a great experience with this roofing company! The process was smooth from start to finish. The team communicated clearly and kept us informed the whole way through. When they came in, they got straight to work and were professional.",
+    date: "6 months ago",
+    location: "Florida"
   },
   {
     id: 3,
-    name: "David Martinez",
+    name: "Janet",
     rating: 5,
-    text: "After the storm damaged our roof, NextDoor was there within 24 hours. They handled everything with our insurance and we couldn't be happier with the result!",
-    date: "3 weeks ago",
-    location: "Tampa, FL"
+    text: "We live in Spring Hill and were in desperate need of a new roof. Kyle showed up at our door. One of the best days of our life. Kyle made the whole process of getting a new roof so easy for us. The owners are easy to work with. The roofers did excellent work.",
+    date: "a year ago",
+    location: "Spring Hill, FL"
   },
   {
     id: 4,
-    name: "Jennifer Williams",
+    name: "James",
     rating: 5,
-    text: "Outstanding service from start to finish. The online estimate was spot-on and the team was incredibly professional. Our neighbors have already asked for their info!",
-    date: "1 month ago",
-    location: "Largo, FL"
+    text: "Their vision is simple - Affordable roofs with the highest quality & helping people with no insurance throughout the Tampa Bay area! Including many finance programs available. The owners Drew & Alex have what this industry needs - Integrity, transparency & accountability!",
+    date: "a month ago",
+    location: "Tampa Bay, FL"
   },
   {
     id: 5,
-    name: "Robert Chen",
+    name: "Malena",
     rating: 5,
-    text: "Five stars isn't enough! They replaced our entire roof in just two days. Quality materials, fair pricing, and excellent communication throughout the process.",
-    date: "2 months ago",
-    location: "Palm Harbor, FL"
+    text: "NextDoor Exterior Solutions did an outstanding and professional roofing job on my house. They walked me through everything and the office manager Chris was very patient answering all of my questions and concerns. The crew were punctual and professional.",
+    date: "7 months ago",
+    location: "Florida"
   },
   {
     id: 6,
-    name: "Amanda Foster",
+    name: "Kim",
     rating: 5,
-    text: "We got quotes from 5 different companies and NextDoor offered the best value with the Titan XT warranty. Two years later, our roof still looks brand new!",
-    date: "2 months ago",
-    location: "Dunedin, FL"
+    text: "I was impacted by Hurricane Milton. Then I met Josh and we talked for some time before I agreed to have NextDoor Exterior Solutions replace my roof. Josh and Drew made the process smooth and stress-free, especially given the challenges with the hurricane damage.",
+    date: "6 months ago",
+    location: "Florida"
+  },
+  {
+    id: 7,
+    name: "Andrew",
+    rating: 5,
+    text: "Jim Musella referred us to NextDoor Exterior Solutions, very glad! We have now begun the process of receiving a new roof. He has followed up with me and helped with any questions I have had along the way and been very supportive. Thank you Jim!",
+    date: "2 weeks ago",
+    location: "Florida"
+  },
+  {
+    id: 8,
+    name: "J.",
+    rating: 5,
+    text: "NextDoor Exterior Solutions just installed our new roof. Chad Graves was the salesman. He worked with us and then the insurance adjuster to make sure the extent of the damage and age of the roof was well documented. Excellent service!",
+    date: "a year ago",
+    location: "Florida"
   }
 ];
 
@@ -131,8 +147,8 @@ export function GoogleReviewsSlider() {
           </h2>
           <div className="flex items-center justify-center gap-2 text-primary">
             <div className="flex">{renderStars(5)}</div>
-            <span className="text-white font-semibold">5.0</span>
-            <span className="text-gray-400">({reviews.length} reviews)</span>
+            <span className="text-white font-semibold">4.8</span>
+            <span className="text-gray-400">(79 reviews)</span>
           </div>
         </div>
 
@@ -214,7 +230,7 @@ export function GoogleReviewsSlider() {
             rel="noopener noreferrer"
             className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
           >
-            View all reviews on Google →
+            View all 79 reviews on Google →
           </a>
         </div>
       </div>
