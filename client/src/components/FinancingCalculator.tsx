@@ -86,42 +86,52 @@ const RENEW_STANDARD_TERMS: FinancingTerm[] = [
   },
 ];
 
-// PACE Program Options (Property Tax Based)
-const PACE_TERMS: FinancingTerm[] = [
+// PACE Program Options (Property Tax Based) - Using factor-based calculations
+// Factor = Annual Assessment / Project Cost, then divide by 12 for monthly
+interface PaceTerm extends FinancingTerm {
+  factor: number; // Annual assessment factor
+}
+
+const PACE_TERMS: PaceTerm[] = [
   { 
     months: 120, 
-    apr: 5.99, 
+    apr: 7.49, 
+    factor: 0.148,
     label: "10 years", 
     type: "pace",
     icon: <Leaf className="h-4 w-4 text-green-400" />,
-    highlight: "5.99%"
+    highlight: "~7.49%"
   },
   { 
     months: 180, 
-    apr: 6.99, 
+    apr: 7.99, 
+    factor: 0.120,
     label: "15 years", 
     type: "pace",
     icon: <Home className="h-4 w-4 text-green-400" />,
-    highlight: "6.99%"
+    highlight: "~7.99%"
   },
   { 
     months: 240, 
-    apr: 7.49, 
+    apr: 8.49, 
+    factor: 0.108,
     label: "20 years", 
     type: "pace",
     icon: <Building2 className="h-4 w-4 text-green-400" />,
-    highlight: "7.49%"
+    highlight: "~8.49%"
   },
   { 
     months: 300, 
-    apr: 7.99, 
+    apr: 8.99, 
+    factor: 0.103,
     label: "25 years", 
     type: "pace",
     icon: <Award className="h-4 w-4 text-green-400" />,
-    highlight: "7.99%"
+    highlight: "~8.99%"
   },
 ];
 
+// Standard interest-based calculation for Renew Financial
 function calculateMonthlyPayment(principal: number, apr: number, months: number): number {
   if (apr === 0) {
     return principal / months;
@@ -129,6 +139,13 @@ function calculateMonthlyPayment(principal: number, apr: number, months: number)
   const monthlyRate = apr / 100 / 12;
   const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
   return payment;
+}
+
+// Factor-based calculation for PACE program
+// Annual Assessment = Project Cost × Factor, Monthly = Annual / 12
+function calculatePaceMonthlyPayment(principal: number, factor: number): number {
+  const annualAssessment = principal * factor;
+  return annualAssessment / 12;
 }
 
 function calculateTotalCost(monthlyPayment: number, months: number): number {
@@ -175,15 +192,32 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
   };
 
   const selectedPrice = prices[selectedTier];
-  const monthlyPayment = calculateMonthlyPayment(selectedPrice, term.apr, term.months);
+  
+  // Use factor-based calculation for PACE, standard calculation for Renew
+  const isPace = financingType === "pace";
+  const paceTerm = term as PaceTerm;
+  
+  const monthlyPayment = isPace && paceTerm.factor
+    ? calculatePaceMonthlyPayment(selectedPrice, paceTerm.factor)
+    : calculateMonthlyPayment(selectedPrice, term.apr, term.months);
+  
   const totalCost = calculateTotalCost(monthlyPayment, term.months);
   const totalInterest = totalCost - selectedPrice;
+  
+  // Annual assessment for PACE display
+  const annualAssessment = isPace && paceTerm.factor ? selectedPrice * paceTerm.factor : 0;
 
   // Calculate monthly payments for all tiers at selected term
   const allTierPayments = {
-    good: calculateMonthlyPayment(goodPrice, term.apr, term.months),
-    better: calculateMonthlyPayment(betterPrice, term.apr, term.months),
-    best: calculateMonthlyPayment(bestPrice, term.apr, term.months),
+    good: isPace && paceTerm.factor
+      ? calculatePaceMonthlyPayment(goodPrice, paceTerm.factor)
+      : calculateMonthlyPayment(goodPrice, term.apr, term.months),
+    better: isPace && paceTerm.factor
+      ? calculatePaceMonthlyPayment(betterPrice, paceTerm.factor)
+      : calculateMonthlyPayment(betterPrice, term.apr, term.months),
+    best: isPace && paceTerm.factor
+      ? calculatePaceMonthlyPayment(bestPrice, paceTerm.factor)
+      : calculateMonthlyPayment(bestPrice, term.apr, term.months),
   };
 
   return (
@@ -384,10 +418,15 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
             </Badge>
           )}
           {financingType === "pace" && (
-            <p className="text-xs text-green-400 mt-2 flex items-center justify-center gap-1">
-              <Home className="h-3 w-3" />
-              Paid through your property tax bill
-            </p>
+            <div className="mt-3">
+              <p className="text-sm text-green-400 font-medium">
+                Annual Assessment: ${Math.round(annualAssessment).toLocaleString()}/year
+              </p>
+              <p className="text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
+                <Home className="h-3 w-3" />
+                Paid through your property tax bill
+              </p>
+            </div>
           )}
         </div>
 

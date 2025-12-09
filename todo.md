@@ -106,3 +106,8 @@
 - [x] Add distinctive icons for each financing term option
 - [x] Add icons to package selection buttons
 - [x] Enhance visual hierarchy with better iconography
+
+## PACE Factor-Based Calculations
+- [x] Update PACE terms with factor-based calculation (10yr: 0.148, 15yr: 0.120, 20yr: 0.108, 25yr: 0.103)
+- [x] Update interest rates (10yr: 7.49%, 15yr: 7.99%, 20yr: 8.49%, 25yr: 8.99%)
+- [x] Calculate annual assessment by multiplying cost by factor, then divide by 12 for monthly
