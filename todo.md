@@ -120,3 +120,7 @@
 - [x] Remove references to insurance claims handling or adjusting
 - [x] Focus only on inspection and documentation services
 - [x] Add disclaimer about not being licensed public adjusters
+
+## Storm Damage Section Updates
+- [x] Remove disclaimer about not being licensed public adjusters
+- [x] Remove "free" from inspection since it requires promo code
