@@ -78,3 +78,13 @@
 - [x] Update Better tier to $550/sq
 - [x] Update Best tier to $650/sq
 - [x] Add disclaimer: price based on lowest value, does not include upgrades or chosen materials
+
+## Admin Dashboard & CRM Integration
+- [x] Create protected admin dashboard page (admin-only access)
+- [x] Display all submitted leads with estimate details
+- [x] Show lead info: name, email, phone, address, roof area, pitch, pricing tiers
+- [x] Add lead status management (new, contacted, quoted, won, lost)
+- [x] Create REST API endpoint for CRM integration (/api/trpc/admin.*)
+- [x] Add API authentication for CRM access (admin role required)
+- [x] Include filtering and search functionality
+- [x] Add export to CSV option

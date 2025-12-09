@@ -1,10 +1,10 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, adminProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { makeRequest, GeocodingResult } from "./_core/map";
-import { createLead, createEstimate, getAllLeads, getAllEstimates, getLeadWithEstimate } from "./db";
+import { createLead, createEstimate, getAllLeads, getAllEstimates, getLeadWithEstimate, getLeadsWithEstimates, updateLeadStatus, updateLeadNotes, deleteLead } from "./db";
 import { ENV } from "./_core/env";
 import { 
   PRICING_TIERS, 
@@ -367,17 +367,59 @@ Note: Satellite data was not available for this property. Manual inspection requ
       };
     }),
 
-  // Admin: Get all leads
-  getLeads: publicProcedure.query(async () => {
-    return await getAllLeads();
+  // Admin router for lead management
+  admin: router({
+    // Get all leads with estimates
+    getLeadsWithEstimates: adminProcedure.query(async () => {
+      return await getLeadsWithEstimates();
+    }),
+
+    // Get all leads
+    getLeads: adminProcedure.query(async () => {
+      return await getAllLeads();
+    }),
+
+    // Get all estimates
+    getEstimates: adminProcedure.query(async () => {
+      return await getAllEstimates();
+    }),
+
+    // Get single lead with estimate
+    getLeadWithEstimate: adminProcedure
+      .input(z.object({ leadId: z.number() }))
+      .query(async ({ input }) => {
+        return await getLeadWithEstimate(input.leadId);
+      }),
+
+    // Update lead status
+    updateLeadStatus: adminProcedure
+      .input(z.object({
+        leadId: z.number(),
+        status: z.enum(["new", "contacted", "quoted", "won", "lost"]),
+      }))
+      .mutation(async ({ input }) => {
+        return await updateLeadStatus(input.leadId, input.status);
+      }),
+
+    // Update lead notes
+    updateLeadNotes: adminProcedure
+      .input(z.object({
+        leadId: z.number(),
+        notes: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return await updateLeadNotes(input.leadId, input.notes);
+      }),
+
+    // Delete lead
+    deleteLead: adminProcedure
+      .input(z.object({ leadId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await deleteLead(input.leadId);
+      }),
   }),
 
-  // Admin: Get all estimates
-  getEstimates: publicProcedure.query(async () => {
-    return await getAllEstimates();
-  }),
-
-  // Get lead with estimate
+  // Public: Get lead with estimate (for viewing own estimate)
   getLeadWithEstimate: publicProcedure
     .input(z.object({ leadId: z.number() }))
     .query(async ({ input }) => {

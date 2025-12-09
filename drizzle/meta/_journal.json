@@ -15,6 +15,13 @@
       "when": 1765243498978,
       "tag": "0001_fixed_thunderbolts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1765253753064,
+      "tag": "0002_tricky_whiplash",
+      "breakpoints": true
     }
   ]
 }

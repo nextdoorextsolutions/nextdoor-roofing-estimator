@@ -187,3 +187,82 @@ export async function getLeadWithEstimate(leadId: number): Promise<{ lead: Lead;
   const estimate = await getEstimateByLeadId(leadId);
   return { lead, estimate };
 }
+
+
+// Get all leads with their estimates for admin dashboard
+export async function getLeadsWithEstimates(): Promise<Array<{ lead: Lead; estimate: Estimate | null }>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get leads: database not available");
+    return [];
+  }
+
+  const allLeads = await db.select().from(leads).orderBy(desc(leads.createdAt));
+  const result: Array<{ lead: Lead; estimate: Estimate | null }> = [];
+
+  for (const lead of allLeads) {
+    const estimateResult = await db.select().from(estimates).where(eq(estimates.leadId, lead.id)).limit(1);
+    result.push({
+      lead,
+      estimate: estimateResult[0] || null,
+    });
+  }
+
+  return result;
+}
+
+// Update lead status
+export async function updateLeadStatus(leadId: number, status: "new" | "contacted" | "quoted" | "won" | "lost"): Promise<Lead | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update lead: database not available");
+    return null;
+  }
+
+  try {
+    await db.update(leads).set({ status }).where(eq(leads.id, leadId));
+    const updated = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
+    return updated[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to update lead status:", error);
+    throw error;
+  }
+}
+
+// Update lead notes
+export async function updateLeadNotes(leadId: number, notes: string): Promise<Lead | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update lead: database not available");
+    return null;
+  }
+
+  try {
+    await db.update(leads).set({ notes }).where(eq(leads.id, leadId));
+    const updated = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
+    return updated[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to update lead notes:", error);
+    throw error;
+  }
+}
+
+// Delete lead and associated estimate
+export async function deleteLead(leadId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete lead: database not available");
+    return false;
+  }
+
+  try {
+    // Delete associated estimates first
+    await db.delete(estimates).where(eq(estimates.leadId, leadId));
+    // Then delete the lead
+    await db.delete(leads).where(eq(leads.id, leadId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete lead:", error);
+    throw error;
+  }
+}
