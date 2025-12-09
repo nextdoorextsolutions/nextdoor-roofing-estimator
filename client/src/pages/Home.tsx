@@ -1,15 +1,15 @@
 import { useState, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { AddressInput } from "@/components/AddressInput";
-import { LeadCaptureForm } from "@/components/LeadCaptureForm";
+import { LeadCaptureModal } from "@/components/LeadCaptureModal";
 import { EstimateResults } from "@/components/EstimateResults";
 import { ManualQuoteForm } from "@/components/ManualQuoteForm";
 import { generateProposalPDF } from "@/lib/generatePDF";
+import { sendLeadEmail } from "@/lib/emailjs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { 
-  Home as HomeIcon, 
   Shield, 
   Clock, 
   Award, 
@@ -35,6 +35,7 @@ export default function Home() {
   const [estimate, setEstimate] = useState<EstimateResult | null>(null);
   const [customerInfo, setCustomerInfo] = useState<{ name?: string; email?: string; phone?: string }>({});
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showLeadModal, setShowLeadModal] = useState(false);
 
   // tRPC mutations
   const geocodeMutation = trpc.geocode.useMutation();
@@ -63,6 +64,8 @@ export default function Home() {
 
       if (roofResult.solarApiAvailable && roofResult.roofData) {
         setRoofData(roofResult.roofData);
+        // Show the lead capture modal
+        setShowLeadModal(true);
         setStep("lead-capture");
       } else {
         // Solar API not available - show manual quote form
@@ -87,6 +90,7 @@ export default function Home() {
     if (!location || !roofData) return;
 
     setCustomerInfo(data);
+    setShowLeadModal(false);
 
     try {
       const result = await submitLeadMutation.mutateAsync({
@@ -98,11 +102,32 @@ export default function Home() {
       });
 
       setEstimate(result.estimate);
+
+      // Send email via EmailJS
+      try {
+        await sendLeadEmail({
+          customerName: data.name || "Website Visitor",
+          customerPhone: data.phone || "Not provided",
+          customerEmail: data.email || "Not provided",
+          address: location.formattedAddress,
+          area: roofData.totalRoofArea,
+          pitch: roofData.averagePitch,
+          eaveLength: roofData.eaveLength,
+          valleyLength: roofData.ridgeValleyLength,
+          price: result.estimate.pricing.better, // Send the "Better" tier price
+        });
+        console.log("Lead email sent successfully");
+      } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+        // Don't block the user flow if email fails
+      }
+
       setStep("results");
       toast.success("Your estimate is ready!");
     } catch (error) {
       console.error("Error submitting lead:", error);
       toast.error("Failed to generate estimate. Please try again.");
+      setShowLeadModal(true);
     }
   }, [location, roofData, submitLeadMutation]);
 
@@ -118,6 +143,23 @@ export default function Home() {
         latitude: location.lat.toString(),
         longitude: location.lng.toString(),
       });
+
+      // Send email via EmailJS for manual quote request
+      try {
+        await sendLeadEmail({
+          customerName: data.name || "Website Visitor",
+          customerPhone: data.phone || "Not provided",
+          customerEmail: data.email || "Not provided",
+          address: location.formattedAddress,
+          area: 0,
+          pitch: 0,
+          eaveLength: 0,
+          valleyLength: 0,
+          price: 0,
+        });
+      } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+      }
 
       setStep("manual-submitted");
       toast.success("Your quote request has been submitted!");
@@ -154,20 +196,23 @@ export default function Home() {
     setRoofData(null);
     setEstimate(null);
     setCustomerInfo({});
+    setShowLeadModal(false);
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-[oklch(0.15_0_0)] text-white">
+      <header className="bg-[oklch(0.10_0_0)] text-white">
         <div className="container py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <HomeIcon className="h-6 w-6 text-white" />
-              </div>
+              <img 
+                src="/logo.jpg" 
+                alt="NextDoor Exterior Solutions" 
+                className="h-12 w-12 rounded-full object-cover"
+              />
               <div>
-                <h1 className="text-xl font-bold">NextDoor Exteriors</h1>
+                <h1 className="text-xl font-bold">NextDoor Exterior Solutions</h1>
                 <p className="text-xs text-gray-400">Professional Roofing Solutions</p>
               </div>
             </div>
@@ -188,13 +233,22 @@ export default function Home() {
 
       {/* Hero Section - Only show on address step */}
       {step === "address" && (
-        <section className="relative bg-gradient-to-br from-[oklch(0.15_0_0)] via-[oklch(0.20_0_0)] to-[oklch(0.25_0.05_180)] text-white overflow-hidden">
+        <section className="relative bg-[oklch(0.10_0_0)] text-white overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAzMHYySDE0di0yaDIyek0zNiAyNnYySDE0di0yaDIyek0zNiAyMnYySDE0di0yaDIyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
           <div className="container relative py-16 md:py-24">
             <div className="max-w-3xl mx-auto text-center space-y-6">
+              {/* Logo */}
+              <div className="flex justify-center mb-6">
+                <img 
+                  src="/logo.jpg" 
+                  alt="NextDoor Exterior Solutions" 
+                  className="h-32 w-32 rounded-full object-cover border-4 border-primary shadow-lg shadow-primary/30"
+                />
+              </div>
+              
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 Get Your Instant
-                <span className="text-primary block mt-2">Roof Estimate</span>
+                <span className="text-primary block mt-2">Roof Quote</span>
               </h2>
               <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
                 Enter your address below and get a detailed roofing estimate in seconds. 
@@ -254,35 +308,15 @@ export default function Home() {
           </div>
         )}
 
-        {/* Lead Capture Step */}
+        {/* Lead Capture Modal */}
         {step === "lead-capture" && roofData && (
-          <div className="space-y-8">
-            {/* Preview of roof data */}
-            <div className="max-w-md mx-auto">
-              <Card className="mb-6 overflow-hidden">
-                <img
-                  src={roofData.satelliteImageUrl}
-                  alt="Your roof"
-                  className="w-full h-48 object-cover"
-                />
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2 text-primary mb-2">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span className="font-semibold">Roof Analysis Complete!</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    We found {roofData.totalRoofArea.toLocaleString()} sq ft of roof area. 
-                    Enter your info below to see your personalized estimate.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <LeadCaptureForm
-              onSubmit={handleLeadSubmit}
-              isLoading={submitLeadMutation.isPending}
-            />
-          </div>
+          <LeadCaptureModal
+            isOpen={showLeadModal}
+            onClose={() => setShowLeadModal(false)}
+            onSubmit={handleLeadSubmit}
+            isLoading={submitLeadMutation.isPending}
+            roofArea={roofData.totalRoofArea}
+          />
         )}
 
         {/* Results Step */}
@@ -328,7 +362,7 @@ export default function Home() {
       {step === "address" && (
         <section className="bg-muted/50 py-16">
           <div className="container">
-            <h3 className="text-2xl font-bold text-center mb-10">Why Choose NextDoor Exteriors?</h3>
+            <h3 className="text-2xl font-bold text-center mb-10">Why Choose NextDoor Exterior Solutions?</h3>
             <div className="grid md:grid-cols-3 gap-8">
               <Card className="text-center p-6">
                 <div className="w-14 h-14 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
@@ -363,17 +397,19 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer className="bg-[oklch(0.15_0_0)] text-white py-8">
+      <footer className="bg-[oklch(0.10_0_0)] text-white py-8">
         <div className="container">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <HomeIcon className="h-5 w-5 text-white" />
-              </div>
-              <span className="font-semibold">NextDoor Exteriors</span>
+              <img 
+                src="/logo.jpg" 
+                alt="NextDoor Exterior Solutions" 
+                className="h-10 w-10 rounded-full object-cover"
+              />
+              <span className="font-semibold">NextDoor Exterior Solutions</span>
             </div>
             <p className="text-sm text-gray-400">
-              © {new Date().getFullYear()} NextDoor Exteriors. All rights reserved.
+              © {new Date().getFullYear()} NextDoor Exterior Solutions. All rights reserved.
             </p>
           </div>
         </div>

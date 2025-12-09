@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
-import { PRICING_TIERS, WASTE_FACTOR, PITCH_SURCHARGE, PITCH_THRESHOLD } from "../shared/roofing";
+import { PRICING_TIERS, WASTE_FACTOR, PITCH_SURCHARGE, PITCH_THRESHOLD, calculateEaveLength, calculateValleyRidgeLength } from "../shared/roofing";
 
 // Create a mock context for testing
 function createMockContext(): TrpcContext {
@@ -165,6 +165,29 @@ describe("calculateEstimate procedure", () => {
     expect(result.pricing.good).toBe(27500);
     expect(result.pricing.better).toBe(33000);
     expect(result.pricing.best).toBe(41250);
+  });
+});
+
+describe("Heuristic Edge Length Calculations", () => {
+  it("should calculate eave length as sqrt(area) * 4", () => {
+    const area = 2500; // 50x50 equivalent
+    const eaveLength = calculateEaveLength(area);
+    expect(eaveLength).toBe(200); // sqrt(2500) * 4 = 50 * 4 = 200
+  });
+
+  it("should calculate valley/ridge length as 20% of eave length", () => {
+    const eaveLength = 200;
+    const valleyLength = calculateValleyRidgeLength(eaveLength);
+    expect(valleyLength).toBe(40); // 200 * 0.20 = 40
+  });
+
+  it("should handle larger roof areas", () => {
+    const area = 4000;
+    const eaveLength = calculateEaveLength(area);
+    const valleyLength = calculateValleyRidgeLength(eaveLength);
+    // sqrt(4000) ≈ 63.25, * 4 ≈ 253, rounded
+    expect(eaveLength).toBe(253);
+    expect(valleyLength).toBe(51); // 253 * 0.20 ≈ 50.6, rounded
   });
 });
 

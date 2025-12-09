@@ -11,6 +11,8 @@ import {
   WASTE_FACTOR, 
   PITCH_SURCHARGE, 
   PITCH_THRESHOLD,
+  calculateEaveLength,
+  calculateValleyRidgeLength,
   type SolarApiResponse,
   type RoofData,
   type EstimateResult 
@@ -33,36 +35,13 @@ function degreesToPitchRatio(degrees: number): number {
   return Math.round(Math.tan(degrees * Math.PI / 180) * 12);
 }
 
-// Helper function to estimate edge lengths from roof segments
-function estimateEdgeLengths(segments: SolarApiResponse["solarPotential"]["roofSegmentStats"]): { eaveLength: number; ridgeValleyLength: number } {
-  let totalEaveLength = 0;
-  let totalRidgeValleyLength = 0;
-
-  segments.forEach(segment => {
-    const areaM2 = segment.stats.areaMeters2;
-    // Approximate dimensions assuming rectangular segments
-    // Use bounding box to estimate width
-    const bbox = segment.boundingBox;
-    const widthDeg = Math.abs(bbox.ne.longitude - bbox.sw.longitude);
-    const heightDeg = Math.abs(bbox.ne.latitude - bbox.sw.latitude);
-    
-    // Convert to approximate meters (rough approximation)
-    const widthM = widthDeg * 111320 * Math.cos(segment.center.latitude * Math.PI / 180);
-    const heightM = heightDeg * 110540;
-    
-    // Eave is typically the bottom edge (wider dimension)
-    const eaveM = Math.max(widthM, heightM);
-    // Ridge/valley is typically the shorter dimension or shared edges
-    const ridgeM = Math.min(widthM, heightM);
-    
-    totalEaveLength += eaveM;
-    totalRidgeValleyLength += ridgeM;
-  });
-
-  return {
-    eaveLength: Math.round(metersToFeet(totalEaveLength)),
-    ridgeValleyLength: Math.round(metersToFeet(totalRidgeValleyLength))
-  };
+// Helper function to estimate edge lengths using heuristic
+// Eave Length ≈ sqrt(Total Area) * 4
+// Valley/Ridge Length ≈ 20% of Eave Length
+function estimateEdgeLengths(totalAreaSqFt: number): { eaveLength: number; ridgeValleyLength: number } {
+  const eaveLength = calculateEaveLength(totalAreaSqFt);
+  const ridgeValleyLength = calculateValleyRidgeLength(eaveLength);
+  return { eaveLength, ridgeValleyLength };
 }
 
 // Calculate pricing based on roof data
@@ -176,8 +155,8 @@ export const appRouter = router({
         const avgPitchDegrees = totalPitchDegrees / segments.length;
         const averagePitch = degreesToPitchRatio(avgPitchDegrees);
 
-        // Estimate edge lengths
-        const { eaveLength, ridgeValleyLength } = estimateEdgeLengths(segments);
+        // Estimate edge lengths using heuristic based on total area
+        const { eaveLength, ridgeValleyLength } = estimateEdgeLengths(totalRoofArea);
 
         const roofData: RoofData = {
           totalRoofArea,

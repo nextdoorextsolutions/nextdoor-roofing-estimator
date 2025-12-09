@@ -126,3 +126,15 @@ export const PRICING_TIERS: PricingTier[] = [
 export const WASTE_FACTOR = 0.10; // 10% waste
 export const PITCH_SURCHARGE = 0.10; // 10% surcharge for steep roofs
 export const PITCH_THRESHOLD = 6; // 6/12 pitch threshold
+
+// Helper function to calculate eave length using heuristic
+// Eave Length ≈ sqrt(Total Area) * 4
+export function calculateEaveLength(totalAreaSqFt: number): number {
+  return Math.round(Math.sqrt(totalAreaSqFt) * 4);
+}
+
+// Helper function to calculate valley/ridge length
+// Valley/Ridge Length ≈ 20% of Eave Length
+export function calculateValleyRidgeLength(eaveLength: number): number {
+  return Math.round(eaveLength * 0.20);
+}

@@ -29,7 +29,7 @@ export function generateProposalPDF(data: PDFData): void {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
-  doc.text("NextDoor Exteriors", 20, 25);
+  doc.text("NextDoor Exterior Solutions", 20, 25);
   
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
@@ -229,12 +229,12 @@ export function generateProposalPDF(data: PDFData): void {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("NextDoor Exteriors", 20, 289);
+  doc.text("NextDoor Exterior Solutions", 20, 289);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.text("Call us today for your free onsite inspection!", 100, 289);
 
   // Save the PDF
-  const filename = `NextDoor_Roofing_Estimate_${new Date().toISOString().split("T")[0]}.pdf`;
+  const filename = `NextDoor_Exterior_Solutions_Estimate_${new Date().toISOString().split("T")[0]}.pdf`;
   doc.save(filename);
 }

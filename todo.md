@@ -31,3 +31,11 @@
 - Coverage varies by location - many residential areas have coverage, but some newer homes or rural areas may not
 - When Solar API data is unavailable, the app correctly falls back to manual quote request
 - Disclaimer is shown on all estimates: "Estimates are based on satellite data. Final price subject to onsite inspection."
+
+## Updates - December 8, 2025
+- [x] Add company logo (NES.jpg) to the application
+- [x] Update company name to "NextDoor Exterior Solutions"
+- [x] Add EmailJS integration for lead email notifications
+- [x] Update eave/valley calculation to use heuristic (sqrt(area)*4 for eave, 20% of eave for valley)
+- [x] Add lead capture modal before showing results
+- [x] Request EmailJS public key from user
