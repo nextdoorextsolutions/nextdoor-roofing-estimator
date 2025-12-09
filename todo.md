@@ -39,3 +39,5 @@
 - [x] Update eave/valley calculation to use heuristic (sqrt(area)*4 for eave, 20% of eave for valley)
 - [x] Add lead capture modal before showing results
 - [x] Request EmailJS public key from user
+
+- [x] Show typing in real-time in the Get Estimate button as user types address
