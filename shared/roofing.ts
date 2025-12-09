@@ -14,6 +14,13 @@ export interface PricingTier {
   label: string;
   description: string;
   pricePerSquare: number; // price per 100 sq ft
+  warranty: {
+    shingleYears: number;
+    windSpeed: number;
+    workmanship: string;
+    fullStart?: number; // years of full-start coverage
+  };
+  shortDescription: string;
 }
 
 export interface EstimateResult {
@@ -105,21 +112,40 @@ export interface RoofSegmentStat {
 export const PRICING_TIERS: PricingTier[] = [
   {
     name: "good",
-    label: "Good",
-    description: "3-Tab Shingles",
+    label: "House Brand",
+    description: "Standard 3-Tab Shingles",
+    shortDescription: "Reliable protection at an affordable price",
     pricePerSquare: 500,
+    warranty: {
+      shingleYears: 25,
+      windSpeed: 60,
+      workmanship: "Standard workmanship warranty",
+    },
   },
   {
     name: "better",
     label: "Better",
     description: "Architectural Shingles",
+    shortDescription: "Enhanced durability with dimensional style",
     pricePerSquare: 600,
+    warranty: {
+      shingleYears: 30,
+      windSpeed: 130,
+      workmanship: "Extended workmanship warranty",
+    },
   },
   {
     name: "best",
     label: "Best",
-    description: "Premium/Metal Roofing",
+    description: "Titan XT Premium",
+    shortDescription: "Ultimate protection with industry-leading warranty",
     pricePerSquare: 750,
+    warranty: {
+      shingleYears: 50,
+      windSpeed: 160,
+      workmanship: "Lifetime workmanship warranty",
+      fullStart: 20,
+    },
   },
 ];
 

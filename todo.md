@@ -54,3 +54,11 @@
 - [x] Implement pulsing heartbeat animation for active "Closed Deal" state
 - [x] Make Next button a primary action (solid green/teal background)
 - [x] Fix flow logic to show completed stages with bright connecting lines
+
+## Pricing Tiers & Warranty Updates
+- [x] Rename "Good" tier to "House Brand" shingles
+- [x] Keep "Better" tier as Architectural with 30-year/130 MPH wind warranty
+- [x] Rename "Best" tier with Titan XT - 50-year/160 MPH wind warranty/20-yr Full-Start
+- [x] Add warranty descriptions to each pricing card
+- [x] Add dedicated warranty information section
+- [x] Explain "Full-Start" warranty coverage

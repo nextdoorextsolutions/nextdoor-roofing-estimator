@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, Download, Home, Ruler, TrendingUp, AlertTriangle, Star } from "lucide-react";
+import { Check, Download, Home, Ruler, TrendingUp, AlertTriangle, Shield, Wind, Clock, Award } from "lucide-react";
 import type { EstimateResult } from "../../../shared/roofing";
 import { PRICING_TIERS } from "../../../shared/roofing";
 
@@ -24,7 +24,7 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
 
   const tierIcons = {
     good: <Check className="h-6 w-6" />,
-    better: <Star className="h-6 w-6" />,
+    better: <Shield className="h-6 w-6" />,
     best: <TrendingUp className="h-6 w-6" />,
   };
 
@@ -126,6 +126,9 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
                   </Badge>
                 </div>
                 <CardTitle className="text-lg">{tier.description}</CardTitle>
+                <CardDescription className="text-xs mt-1">
+                  {tier.shortDescription}
+                </CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
@@ -137,6 +140,25 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
                 <p className="text-sm text-muted-foreground mt-1">
                   ${tier.pricePerSquare}/square
                 </p>
+                
+                {/* Warranty Highlights */}
+                <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 text-left">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3 text-primary flex-shrink-0" />
+                    <span>{tier.warranty.shingleYears}-Year Shingle Warranty</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Wind className="h-3 w-3 text-primary flex-shrink-0" />
+                    <span>{tier.warranty.windSpeed} MPH Wind Warranty</span>
+                  </div>
+                  {tier.warranty.fullStart && (
+                    <div className="flex items-center gap-2 text-xs font-semibold text-amber-600">
+                      <Award className="h-3 w-3 flex-shrink-0" />
+                      <span>{tier.warranty.fullStart}-Year Full-Start Coverage</span>
+                    </div>
+                  )}
+                </div>
+
                 {isSelected && (
                   <div className="mt-3">
                     <Badge variant="outline" className="bg-primary text-primary-foreground">
@@ -149,6 +171,71 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
           );
         })}
       </div>
+
+      {/* Warranty Information Section */}
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Shield className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Our Warranty Promise</CardTitle>
+              <CardDescription>Industry-leading protection for your investment</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* House Brand Warranty */}
+            <div className="p-4 bg-white rounded-lg border">
+              <h4 className="font-semibold text-gray-700 mb-2">House Brand</h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>• 25-Year Shingle Limited Warranty</li>
+                <li>• 60 MPH Wind Coverage</li>
+                <li>• Standard Workmanship Warranty</li>
+              </ul>
+            </div>
+            
+            {/* Better Warranty */}
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <h4 className="font-semibold text-primary mb-2">Better</h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>• 30-Year Shingle Limited Warranty</li>
+                <li>• 130 MPH Wind Coverage</li>
+                <li>• Extended Workmanship Warranty</li>
+              </ul>
+            </div>
+            
+            {/* Best Warranty */}
+            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <h4 className="font-semibold text-amber-700 mb-2">Best - Titan XT</h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>• 50-Year Shingle Limited Warranty</li>
+                <li>• 160 MPH Wind Coverage</li>
+                <li>• Lifetime Workmanship Warranty</li>
+                <li className="font-semibold text-amber-700">• 20-Year Full-Start Protection</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Full-Start Explanation */}
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Award className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-amber-800 mb-1">What is Full-Start Coverage?</h4>
+                <p className="text-sm text-amber-700">
+                  Full-Start means complete peace of mind. For the first 20 years, if anything goes wrong with your roof 
+                  due to manufacturing defects, we cover 100% of the material AND labor costs—no depreciation, no prorated 
+                  amounts. Most warranties only cover a declining percentage over time, but Full-Start gives you complete 
+                  protection when it matters most.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Technical Details Accordion */}
       <Accordion type="single" collapsible className="w-full">
