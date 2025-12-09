@@ -101,3 +101,8 @@
 - [x] Add PACE program financing terms
 - [x] Include property tax-based repayment option
 - [x] Show longer term options (10-25 years typical for PACE)
+
+## Financing Calculator UI Refinement
+- [x] Add distinctive icons for each financing term option
+- [x] Add icons to package selection buttons
+- [x] Enhance visual hierarchy with better iconography
