@@ -546,11 +546,11 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
         )}
 
         {/* Disclaimer */}
-        <p className="text-xs text-gray-500 mt-6 text-center">
-          * Financing subject to credit approval. Rates and terms may vary based on creditworthiness and program availability. 
-          PACE financing is repaid through property taxes. Consult a tax advisor regarding deductibility. 
-          This calculator provides estimates only. Contact us for exact financing options.
-        </p>
+        <div className="mt-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+          <p className="text-xs text-gray-400 text-center leading-relaxed">
+            <span className="text-yellow-500 font-medium">Important:</span> These are estimates only. Final financing terms, rates, and monthly payments are subject to the financing provider's approval and may vary based on creditworthiness, property eligibility, and program availability. PACE financing is repaid through your property tax bill and requires property owner consent. Interest deductibility should be verified with a qualified tax advisor. Contact us or the financing provider directly for exact terms and to begin the application process.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
