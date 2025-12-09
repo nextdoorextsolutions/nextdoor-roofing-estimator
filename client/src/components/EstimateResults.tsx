@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Check, Download, Home, Ruler, TrendingUp, AlertTriangle, Shield, Wind, Clock, Award } from "lucide-react";
+import FinancingCalculator from "./FinancingCalculator";
 import type { EstimateResult } from "../../../shared/roofing";
 import { PRICING_TIERS } from "../../../shared/roofing";
 
@@ -286,6 +287,13 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* Financing Calculator */}
+      <FinancingCalculator
+        goodPrice={estimate.pricing.good}
+        betterPrice={estimate.pricing.better}
+        bestPrice={estimate.pricing.best}
+      />
 
       {/* Disclaimer */}
       <Card className="bg-muted/50 border-dashed">

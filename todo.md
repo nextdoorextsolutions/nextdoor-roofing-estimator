@@ -88,3 +88,10 @@
 - [x] Add API authentication for CRM access (admin role required)
 - [x] Include filtering and search functionality
 - [x] Add export to CSV option
+
+## Financing Calculator
+- [x] Create financing calculator component
+- [x] Show monthly payment options for each pricing tier
+- [x] Include multiple term lengths (12, 24, 36, 48, 60 months)
+- [x] Display APR and total cost information
+- [x] Integrate into EstimateResults component
