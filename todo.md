@@ -72,3 +72,9 @@
 ## Real Google Reviews
 - [x] Extract actual 5-star reviews from Google Business profile
 - [x] Update GoogleReviewsSlider with real customer testimonials
+
+## Pricing Update
+- [x] Update Good tier to $450/sq
+- [x] Update Better tier to $550/sq
+- [x] Update Best tier to $650/sq
+- [x] Add disclaimer: price based on lowest value, does not include upgrades or chosen materials

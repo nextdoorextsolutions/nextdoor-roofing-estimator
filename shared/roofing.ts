@@ -115,7 +115,7 @@ export const PRICING_TIERS: PricingTier[] = [
     label: "House Brand",
     description: "Standard 3-Tab Shingles",
     shortDescription: "Reliable protection at an affordable price",
-    pricePerSquare: 500,
+    pricePerSquare: 450,
     warranty: {
       shingleYears: 25,
       windSpeed: 60,
@@ -127,7 +127,7 @@ export const PRICING_TIERS: PricingTier[] = [
     label: "Better",
     description: "Architectural Shingles",
     shortDescription: "Enhanced durability with dimensional style",
-    pricePerSquare: 600,
+    pricePerSquare: 550,
     warranty: {
       shingleYears: 30,
       windSpeed: 130,
@@ -139,7 +139,7 @@ export const PRICING_TIERS: PricingTier[] = [
     label: "Best",
     description: "Titan XT Premium",
     shortDescription: "Ultimate protection with industry-leading warranty",
-    pricePerSquare: 750,
+    pricePerSquare: 650,
     warranty: {
       shingleYears: 50,
       windSpeed: 160,

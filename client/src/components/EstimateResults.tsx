@@ -291,9 +291,7 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
       <Card className="bg-muted/50 border-dashed">
         <CardContent className="py-4">
           <p className="text-sm text-muted-foreground text-center">
-            <strong>Disclaimer:</strong> Estimates are based on satellite data and may vary. 
-            Final price is subject to onsite inspection. Additional costs may apply for 
-            tear-off, decking repairs, or complex roof features.
+            <strong>Disclaimer:</strong> Prices shown are based on lowest base values and do not include upgrades, chosen materials, or additional options. Estimates are based on satellite data and may vary. Final price is subject to onsite inspection. Additional costs may apply for tear-off, decking repairs, or complex roof features.
           </p>
         </CardContent>
       </Card>

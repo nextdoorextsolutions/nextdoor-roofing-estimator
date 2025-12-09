@@ -25,9 +25,9 @@ describe("Pricing Constants", () => {
     const better = PRICING_TIERS.find(t => t.name === "better");
     const best = PRICING_TIERS.find(t => t.name === "best");
     
-    expect(good?.pricePerSquare).toBe(500);
-    expect(better?.pricePerSquare).toBe(600);
-    expect(best?.pricePerSquare).toBe(750);
+    expect(good?.pricePerSquare).toBe(450);
+    expect(better?.pricePerSquare).toBe(550);
+    expect(best?.pricePerSquare).toBe(650);
   });
 
   it("should have correct waste factor of 10%", () => {
@@ -64,12 +64,12 @@ describe("calculateEstimate procedure", () => {
     expect(result.hasPitchSurcharge).toBe(false);
 
     // Number of squares = 2200 / 100 = 22 squares
-    // Good: 22 * 500 = 11000
-    // Better: 22 * 600 = 13200
-    // Best: 22 * 750 = 16500
-    expect(result.pricing.good).toBe(11000);
-    expect(result.pricing.better).toBe(13200);
-    expect(result.pricing.best).toBe(16500);
+    // Good: 22 * 450 = 9900
+    // Better: 22 * 550 = 12100
+    // Best: 22 * 650 = 14300
+    expect(result.pricing.good).toBe(9900);
+    expect(result.pricing.better).toBe(12100);
+    expect(result.pricing.best).toBe(14300);
   });
 
   it("should apply pitch surcharge for steep roofs (pitch > 6/12)", async () => {
@@ -91,12 +91,12 @@ describe("calculateEstimate procedure", () => {
     expect(result.adjustedArea).toBe(2200);
 
     // With 10% pitch surcharge:
-    // Good: 22 * 500 * 1.10 = 12100
-    // Better: 22 * 600 * 1.10 = 14520
-    // Best: 22 * 750 * 1.10 = 18150
-    expect(result.pricing.good).toBe(12100);
-    expect(result.pricing.better).toBe(14520);
-    expect(result.pricing.best).toBe(18150);
+    // Good: 22 * 450 * 1.10 = 10890
+    // Better: 22 * 550 * 1.10 = 13310
+    // Best: 22 * 650 * 1.10 = 15730
+    expect(result.pricing.good).toBe(10890);
+    expect(result.pricing.better).toBe(13310);
+    expect(result.pricing.best).toBe(15730);
   });
 
   it("should not apply pitch surcharge at exactly 6/12 pitch", async () => {
@@ -136,8 +136,8 @@ describe("calculateEstimate procedure", () => {
     expect(result.adjustedArea).toBe(550);
     
     // 5.5 squares
-    // Good: 5.5 * 500 = 2750
-    expect(result.pricing.good).toBe(2750);
+    // Good: 5.5 * 450 = 2475
+    expect(result.pricing.good).toBe(2475);
   });
 
   it("should handle large roof areas correctly", async () => {
@@ -159,12 +159,12 @@ describe("calculateEstimate procedure", () => {
     expect(result.adjustedArea).toBe(5500);
     
     // 55 squares
-    // Good: 55 * 500 = 27500
-    // Better: 55 * 600 = 33000
-    // Best: 55 * 750 = 41250
-    expect(result.pricing.good).toBe(27500);
-    expect(result.pricing.better).toBe(33000);
-    expect(result.pricing.best).toBe(41250);
+    // Good: 55 * 450 = 24750
+    // Better: 55 * 550 = 30250
+    // Best: 55 * 650 = 35750
+    expect(result.pricing.good).toBe(24750);
+    expect(result.pricing.better).toBe(30250);
+    expect(result.pricing.best).toBe(35750);
   });
 });
 
@@ -197,7 +197,7 @@ describe("Pricing tier labels", () => {
     const better = PRICING_TIERS.find(t => t.name === "better");
     const best = PRICING_TIERS.find(t => t.name === "best");
 
-    expect(good?.label).toBe("Good");
+    expect(good?.label).toBe("House Brand");
     expect(better?.label).toBe("Better");
     expect(best?.label).toBe("Best");
   });
@@ -207,8 +207,8 @@ describe("Pricing tier labels", () => {
     const better = PRICING_TIERS.find(t => t.name === "better");
     const best = PRICING_TIERS.find(t => t.name === "best");
 
-    expect(good?.description).toBe("3-Tab Shingles");
+    expect(good?.description).toBe("Standard 3-Tab Shingles");
     expect(better?.description).toBe("Architectural Shingles");
-    expect(best?.description).toBe("Premium/Metal Roofing");
+    expect(best?.description).toBe("Titan XT Premium");
   });
 });
