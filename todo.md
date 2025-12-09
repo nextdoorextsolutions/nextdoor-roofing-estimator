@@ -114,3 +114,9 @@
 
 ## Financing Calculator Disclaimer
 - [x] Add disclaimer clarifying estimates depend on provider approval
+
+## Florida Law Compliance - Storm Damage Section
+- [x] Review StormDamageCTA for any claims-related language
+- [x] Remove references to insurance claims handling or adjusting
+- [x] Focus only on inspection and documentation services
+- [x] Add disclaimer about not being licensed public adjusters

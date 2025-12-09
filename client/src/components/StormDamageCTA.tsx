@@ -1,4 +1,4 @@
-import { CloudLightning, FileText, ArrowRight, Shield } from "lucide-react";
+import { CloudLightning, FileText, ArrowRight, Shield, Camera, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function StormDamageCTA() {
@@ -34,22 +34,22 @@ export function StormDamageCTA() {
               </span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Get Your Free Damage Report
+              Get Your Free Roof Inspection
             </h2>
             <p className="text-white/90 text-lg max-w-xl">
-              Our certified inspectors will assess your roof for storm damage and help you 
-              navigate the insurance claim process. No cost, no obligation.
+              Our certified inspectors will assess your roof for storm damage and provide 
+              detailed photo documentation of any issues found. No cost, no obligation.
             </p>
             
-            {/* Benefits */}
+            {/* Benefits - Compliant with Florida law */}
             <div className="flex flex-wrap gap-4 mt-6 justify-center md:justify-start">
               <div className="flex items-center gap-2 text-white/90">
-                <Shield className="h-5 w-5" />
-                <span>Insurance Claim Assistance</span>
+                <Camera className="h-5 w-5" />
+                <span>Photo Documentation</span>
               </div>
               <div className="flex items-center gap-2 text-white/90">
-                <FileText className="h-5 w-5" />
-                <span>Detailed Documentation</span>
+                <ClipboardCheck className="h-5 w-5" />
+                <span>Detailed Inspection Report</span>
               </div>
             </div>
           </div>
@@ -67,7 +67,7 @@ export function StormDamageCTA() {
                 className="h-16 px-8 text-lg font-bold bg-white text-orange-600 hover:bg-gray-100 hover:text-orange-700 shadow-2xl hover:shadow-white/20 transition-all duration-300 group"
               >
                 <FileText className="mr-2 h-6 w-6" />
-                Set Up My Free Damage Report
+                Schedule Free Inspection
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </a>
@@ -75,6 +75,16 @@ export function StormDamageCTA() {
               100% Free • No Obligation • Fast Response
             </p>
           </div>
+        </div>
+        
+        {/* Compliance Disclaimer */}
+        <div className="mt-8 pt-6 border-t border-white/20">
+          <p className="text-white/60 text-xs text-center max-w-3xl mx-auto">
+            NextDoor Exterior Solutions provides roof inspection and documentation services only. 
+            We are not licensed public adjusters and do not negotiate, adjust, or settle insurance claims 
+            on your behalf. For insurance claim assistance, please consult with a licensed public adjuster 
+            or your insurance company directly.
+          </p>
         </div>
       </div>
     </section>
