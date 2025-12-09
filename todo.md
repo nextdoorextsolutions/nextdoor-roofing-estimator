@@ -62,3 +62,9 @@
 - [x] Add warranty descriptions to each pricing card
 - [x] Add dedicated warranty information section
 - [x] Explain "Full-Start" warranty coverage
+
+## Google Reviews & Storm Damage Features
+- [x] Add Google Reviews slider at the bottom of the page
+- [x] Display 5-star reviews with customer names and review text
+- [x] Add "Set Up My Free Damage Report" button
+- [x] Link button to nextdoorstormdocs.pro

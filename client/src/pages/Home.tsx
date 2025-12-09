@@ -20,6 +20,8 @@ import {
   Phone
 } from "lucide-react";
 import { CallNowButton } from "@/components/CallNowButton";
+import { GoogleReviewsSlider } from "@/components/GoogleReviewsSlider";
+import { StormDamageCTA } from "@/components/StormDamageCTA";
 import type { RoofData, EstimateResult } from "../../../shared/roofing";
 
 type Step = "address" | "analyzing" | "lead-capture" | "results" | "manual-quote" | "manual-submitted";
@@ -368,6 +370,9 @@ export default function Home() {
         )}
       </main>
 
+      {/* Storm Damage CTA - Show on address step */}
+      {step === "address" && <StormDamageCTA />}
+
       {/* Features Section - Only show on address step */}
       {step === "address" && (
         <section className="bg-muted/50 py-16">
@@ -405,6 +410,9 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Google Reviews Slider - Show on address step */}
+      {step === "address" && <GoogleReviewsSlider />}
 
       {/* Footer */}
       <footer className="bg-[oklch(0.10_0_0)] text-white py-8">
