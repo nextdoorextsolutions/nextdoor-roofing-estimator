@@ -95,3 +95,9 @@
 - [x] Include multiple term lengths (12, 24, 36, 48, 60 months)
 - [x] Display APR and total cost information
 - [x] Integrate into EstimateResults component
+
+## Renew Financial & PACE Financing
+- [x] Update financing calculator with Renew Financial options
+- [x] Add PACE program financing terms
+- [x] Include property tax-based repayment option
+- [x] Show longer term options (10-25 years typical for PACE)
