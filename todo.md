@@ -41,3 +41,5 @@
 - [x] Request EmailJS public key from user
 
 - [x] Show typing in real-time in the Get Estimate button as user types address
+- [x] Make address input text black for visibility
+- [x] Keep button text as "Get Estimate" (not showing typed address)

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, Loader2, Search, ArrowRight } from "lucide-react";
+import { MapPin, Loader2, Search } from "lucide-react";
 
 const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
 const FORGE_BASE_URL = import.meta.env.VITE_FRONTEND_FORGE_API_URL || "https://forge.butterfly-effect.dev";
@@ -68,62 +68,36 @@ export function AddressInput({ onAddressSelect, isLoading }: AddressInputProps) 
     }
   };
 
-  // Truncate address for button display
-  const getButtonText = () => {
-    if (isLoading) {
-      return "Analyzing...";
-    }
-    if (inputValue.trim()) {
-      // Show truncated address in button
-      const truncated = inputValue.length > 25 
-        ? inputValue.substring(0, 25) + "..." 
-        : inputValue;
-      return truncated;
-    }
-    return "Get Estimate";
-  };
-
-  const hasAddress = inputValue.trim().length > 0;
-
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
           <Input
             ref={inputRef}
             type="text"
             placeholder="Enter your home address..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="pl-12 h-14 text-lg bg-white border-2 border-border focus:border-primary rounded-xl shadow-sm"
+            className="pl-12 h-14 text-lg bg-white text-black border-2 border-border focus:border-primary rounded-xl shadow-sm placeholder:text-gray-400"
             disabled={isLoading}
           />
         </div>
         <Button
           type="submit"
           size="lg"
-          className={`h-14 px-6 text-base font-semibold rounded-xl shadow-lg transition-all duration-200 ${
-            hasAddress 
-              ? "bg-primary hover:bg-primary/90 min-w-[200px]" 
-              : "bg-primary hover:bg-primary/90"
-          }`}
+          className="h-14 px-8 text-lg font-semibold rounded-xl bg-primary hover:bg-primary/90 shadow-lg"
           disabled={isLoading || !inputValue.trim()}
         >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin flex-shrink-0" />
-              <span className="truncate">Analyzing...</span>
-            </>
-          ) : hasAddress ? (
-            <>
-              <span className="truncate max-w-[150px]">{getButtonText()}</span>
-              <ArrowRight className="ml-2 h-5 w-5 flex-shrink-0" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Analyzing...
             </>
           ) : (
             <>
-              <Search className="mr-2 h-5 w-5 flex-shrink-0" />
-              <span>Get Estimate</span>
+              <Search className="mr-2 h-5 w-5" />
+              Get Estimate
             </>
           )}
         </Button>
