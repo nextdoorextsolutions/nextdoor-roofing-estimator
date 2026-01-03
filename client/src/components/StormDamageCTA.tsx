@@ -1,7 +1,12 @@
-import { CloudLightning, FileText, ArrowRight, Camera, ClipboardCheck } from "lucide-react";
+import { CloudLightning, FileText, ArrowRight, Camera, ClipboardCheck, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function StormDamageCTA() {
+  const handleScheduleInspection = () => {
+    // Open phone dialer
+    window.location.href = "tel:+17273180006";
+  };
+
   return (
     <section className="py-16 bg-gradient-to-r from-amber-600 via-orange-500 to-red-500 relative overflow-hidden">
       {/* Background Pattern */}
@@ -56,21 +61,15 @@ export function StormDamageCTA() {
 
           {/* Right CTA */}
           <div className="flex-shrink-0">
-            <a
-              href="https://nextdoorstormdocs.pro"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
+            <Button
+              size="lg"
+              onClick={handleScheduleInspection}
+              className="h-16 px-8 text-lg font-bold bg-white text-orange-600 hover:bg-gray-100 hover:text-orange-700 shadow-2xl hover:shadow-white/20 transition-all duration-300 group"
             >
-              <Button
-                size="lg"
-                className="h-16 px-8 text-lg font-bold bg-white text-orange-600 hover:bg-gray-100 hover:text-orange-700 shadow-2xl hover:shadow-white/20 transition-all duration-300 group"
-              >
-                <FileText className="mr-2 h-6 w-6" />
-                Schedule My Inspection
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </a>
+              <Phone className="mr-2 h-6 w-6" />
+              Call to Schedule
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
             <p className="text-white/70 text-sm text-center mt-3">
               No Obligation • Fast Response
             </p>
