@@ -86,6 +86,7 @@ declare global {
   }
 }
 
+// Use direct Google Maps API instead of proxy
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
 
 function loadMapScript() {
