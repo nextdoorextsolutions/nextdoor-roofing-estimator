@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ndespanels.com/api/:path*"
+      "destination": "https://www.ndespanels.com/api/:path*"
     },
     {
       "source": "/(.*)",
