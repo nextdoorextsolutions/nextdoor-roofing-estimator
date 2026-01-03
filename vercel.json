@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd client && vite build",
-  "outputDirectory": "client/dist",
+  "buildCommand": "vite build",
+  "outputDirectory": "dist/public",
   "installCommand": "pnpm install",
   "framework": null,
   "rewrites": [
