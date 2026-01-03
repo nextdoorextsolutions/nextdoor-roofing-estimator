@@ -29,21 +29,27 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmit, isLoading, roofAre
     e.preventDefault();
     setError("");
 
-    // Validate at least one contact method
-    if (!name.trim() && !email.trim() && !phone.trim()) {
-      setError("Please provide at least one contact method");
+    // Validate name is required
+    if (!name.trim()) {
+      setError("Please enter your name");
       return;
     }
 
-    // Validate email format if provided
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // Validate email is required
+    if (!email.trim()) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    // Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address");
       return;
     }
 
     onSubmit({
-      name: name.trim() || undefined,
-      email: email.trim() || undefined,
+      name: name.trim(),
+      email: email.trim(),
       phone: phone.trim() || undefined,
     });
   };
@@ -72,7 +78,7 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmit, isLoading, roofAre
           <div className="space-y-2">
             <Label htmlFor="modal-name" className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              Name
+              Name <span className="text-destructive">*</span>
             </Label>
             <Input
               id="modal-name"
@@ -81,13 +87,14 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmit, isLoading, roofAre
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isLoading}
+              required
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="modal-email" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
-              Email
+              Email <span className="text-destructive">*</span>
             </Label>
             <Input
               id="modal-email"
@@ -96,13 +103,14 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmit, isLoading, roofAre
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              required
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="modal-phone" className="flex items-center gap-2">
               <Phone className="h-4 w-4" />
-              Phone
+              Phone (Optional)
             </Label>
             <Input
               id="modal-phone"
@@ -119,7 +127,7 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmit, isLoading, roofAre
           )}
 
           <p className="text-xs text-muted-foreground text-center">
-            Provide at least one contact method
+            * Required fields
           </p>
 
           <Button
