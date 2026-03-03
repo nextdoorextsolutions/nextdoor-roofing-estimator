@@ -3,9 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin, Loader2, Search } from "lucide-react";
 
-const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FORGE_BASE_URL = import.meta.env.VITE_FRONTEND_FORGE_API_URL || "https://forge.butterfly-effect.dev";
-const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
+// Use direct Google Maps API instead of proxy
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
 
 interface AddressInputProps {
   onAddressSelect: (address: string, placeId: string) => void;
@@ -27,7 +26,7 @@ export function AddressInput({ onAddressSelect, isLoading }: AddressInputProps) 
       }
 
       const script = document.createElement("script");
-      script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&v=weekly&libraries=places`;
       script.async = true;
       script.crossOrigin = "anonymous";
       script.onload = () => {

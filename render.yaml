@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: nextdoor-backend
+    runtime: node
+    plan: free
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_OAUTH_PORTAL_URL
+        sync: false
+      - key: VITE_APP_ID
+        sync: false
+      - key: VITE_GOOGLE_MAPS_KEY
+        sync: false

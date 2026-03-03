@@ -7,7 +7,13 @@ import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime()];
+const plugins = [
+  react(), 
+  tailwindcss(), 
+  jsxLocPlugin(),
+  // Only load Manus runtime plugin in development
+  process.env.NODE_ENV !== 'production' && vitePluginManusRuntime()
+].filter(Boolean);
 
 export default defineConfig({
   plugins,
