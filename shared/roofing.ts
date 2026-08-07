@@ -26,6 +26,9 @@ export interface PricingTier {
 export interface EstimateResult {
   roofData: RoofData;
   adjustedArea: number; // with waste factor
+  /** Squares as the BACKEND computed them (ceil of adjusted area / 100).
+   *  Optional so older callers still typecheck; always set from crm.getRoofData. */
+  squares?: number;
   hasPitchSurcharge: boolean;
   pricing: {
     good: number;

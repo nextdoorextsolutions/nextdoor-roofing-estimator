@@ -23,6 +23,10 @@ interface EstimateResultsProps {
 export function EstimateResults({ estimate, address, onDownloadPDF, isGeneratingPDF }: EstimateResultsProps) {
   const [selectedTier, setSelectedTier] = useState<"good" | "better" | "best">("better");
 
+  // Prefer the server's number. The client showing a differently-rounded square
+  // count than the backend priced from is how a quote stops adding up.
+  const squares = estimate.squares ?? Math.ceil(estimate.adjustedArea / 100);
+
   const tierIcons = {
     good: <Check className="h-6 w-6" />,
     better: <Shield className="h-6 w-6" />,
@@ -82,13 +86,13 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
         </Card>
         <Card className="text-center p-4">
           <div className="text-2xl font-bold text-primary">
-            {estimate.roofData.averagePitch}/12
+            {estimate.roofData.averagePitch.toFixed(1)}/12
           </div>
           <div className="text-sm text-muted-foreground">Roof Pitch</div>
         </Card>
         <Card className="text-center p-4">
           <div className="text-2xl font-bold text-primary">
-            {Math.round(estimate.adjustedArea / 100)}
+            {squares}
           </div>
           <div className="text-sm text-muted-foreground">Squares</div>
         </Card>
@@ -100,7 +104,7 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
           <CardContent className="flex items-center gap-3 py-4">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <p className="text-sm text-amber-800">
-              Your roof has a steep pitch ({estimate.roofData.averagePitch}/12), which requires additional safety equipment and labor. A 10% pitch surcharge has been applied.
+              Your roof has a steep pitch ({estimate.roofData.averagePitch.toFixed(1)}/12), which requires additional safety equipment and labor. A 10% pitch surcharge has been applied.
             </p>
           </CardContent>
         </Card>
@@ -139,7 +143,7 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
                   ${price.toLocaleString()}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  ${tier.pricePerSquare}/square
+                  ${Math.round(price / squares).toLocaleString()}/square
                 </p>
                 
                 {/* Warranty Highlights */}
@@ -278,7 +282,7 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
                 <li>• Base Roof Area: {estimate.roofData.totalRoofArea.toLocaleString()} sq ft</li>
                 <li>• Waste Factor: +10% ({Math.round(estimate.roofData.totalRoofArea * 0.1).toLocaleString()} sq ft)</li>
                 <li>• Adjusted Area: {estimate.adjustedArea.toLocaleString()} sq ft</li>
-                <li>• Number of Squares: {Math.round(estimate.adjustedArea / 100)}</li>
+                <li>• Number of Squares: {squares}</li>
                 {estimate.hasPitchSurcharge && (
                   <li>• Pitch Surcharge: +10% (pitch &gt; 6/12)</li>
                 )}
