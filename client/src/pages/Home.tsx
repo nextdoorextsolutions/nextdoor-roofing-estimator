@@ -3,9 +3,8 @@ import { trpc } from "@/lib/trpc";
 import { AddressInput } from "@/components/AddressInput";
 import { LeadCaptureModal } from "@/components/LeadCaptureModal";
 import { EstimateResults } from "@/components/EstimateResults";
-import { ManualQuoteForm } from "@/components/ManualQuoteForm";
+import { HomeownerAssistedForm, type HomeownerAssistedAnswers } from "@/components/HomeownerAssistedForm";
 import { generateProposalPDF } from "@/lib/generatePDF";
-import { sendLeadEmail } from "@/lib/emailjs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -17,14 +16,35 @@ import {
   ArrowRight,
   Loader2,
   RotateCcw,
-  Phone
+  Phone,
+  AlertTriangle,
+  MapPinOff
 } from "lucide-react";
 import { CallNowButton } from "@/components/CallNowButton";
 import { GoogleReviewsSlider } from "@/components/GoogleReviewsSlider";
 import { StormDamageCTA } from "@/components/StormDamageCTA";
 import type { RoofData, EstimateResult } from "../../../shared/roofing";
 
-type Step = "address" | "analyzing" | "lead-capture" | "results" | "manual-quote" | "manual-submitted";
+/**
+ * The funnel's states map 1:1 onto the backend's result taxonomy, deliberately.
+ *
+ *   OK             -> lead-capture -> results
+ *   NO_DATA        -> assisted-questions -> lead-capture -> results (preliminary)
+ *   UPSTREAM_ERROR -> upstream-error   (retry; NEVER the questions form)
+ *   BAD_INPUT      -> bad-address      (fix the address)
+ *
+ * Keeping these distinct on the client is half the root-cause fix. The retired
+ * funnel had one failure branch, so an outage and a genuine coverage gap looked
+ * identical to the visitor and produced the same (wrong) conclusion for us.
+ */
+type Step =
+  | "address"
+  | "analyzing"
+  | "lead-capture"
+  | "results"
+  | "assisted-questions"
+  | "upstream-error"
+  | "bad-address";
 
 interface LocationData {
   lat: number;
@@ -40,138 +60,125 @@ export default function Home() {
   const [customerInfo, setCustomerInfo] = useState<{ name?: string; email?: string; phone?: string }>({});
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showLeadModal, setShowLeadModal] = useState(false);
+  const [assistedAnswers, setAssistedAnswers] = useState<HomeownerAssistedAnswers | null>(null);
+  const [isPreliminary, setIsPreliminary] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // tRPC mutations
-  const geocodeMutation = trpc.geocode.useMutation();
-  const getRoofDataMutation = trpc.getRoofData.useMutation();
-  const submitLeadMutation = trpc.submitLead.useMutation();
-  const requestManualQuoteMutation = trpc.requestManualQuote.useMutation();
+  // The measurement is a QUERY on the backend, fetched imperatively because it
+  // runs in response to the visitor picking an address, not on render.
+  const utils = trpc.useUtils();
+  const submitLeadMutation = trpc.crm.submitEstimatorLead.useMutation();
+  // getRoofData is fetched imperatively, so there is no query object to read a
+  // pending flag from — the step machine carries it instead.
+  const isMeasuring = step === "analyzing";
 
   const handleAddressSelect = useCallback(async (address: string) => {
     setStep("analyzing");
-    
+    setErrorMessage(null);
+
     try {
-      // Step 1: Geocode the address
-      const geoResult = await geocodeMutation.mutateAsync({ address });
-      const locationData: LocationData = {
-        lat: geoResult.lat,
-        lng: geoResult.lng,
-        formattedAddress: geoResult.formattedAddress,
-      };
-      setLocation(locationData);
+      const result: any = await utils.crm.getRoofData.fetch({ address });
 
-      // Step 2: Get roof data from Solar API
-      const roofResult = await getRoofDataMutation.mutateAsync({
-        lat: geoResult.lat,
-        lng: geoResult.lng,
-      });
-
-      if (roofResult.solarApiAvailable && roofResult.roofData) {
-        setRoofData(roofResult.roofData);
-        // Show the lead capture modal
-        setShowLeadModal(true);
-        setStep("lead-capture");
-      } else {
-        // Solar API not available - show manual quote form
+      if (result.status === "OK") {
+        setLocation({
+          lat: result.location.lat,
+          lng: result.location.lng,
+          formattedAddress: result.location.formattedAddress,
+        });
         setRoofData({
-          totalRoofArea: 0,
-          averagePitch: 0,
+          totalRoofArea: Math.round(result.measurement.totalRoofAreaSqFt),
+          averagePitch: result.measurement.pitchRise ?? 0,
           eaveLength: 0,
           ridgeValleyLength: 0,
-          satelliteImageUrl: roofResult.satelliteImageUrl,
-          solarApiAvailable: false,
+          satelliteImageUrl: "",
+          solarApiAvailable: true,
         });
-        setStep("manual-quote");
+        setIsPreliminary(false);
+        setAssistedAnswers(null);
+        setShowLeadModal(true);
+        setStep("lead-capture");
+        return;
       }
+
+      if (result.status === "NO_DATA") {
+        // Google genuinely has nothing here. Ask the homeowner instead.
+        setLocation({
+          lat: result.location.lat,
+          lng: result.location.lng,
+          formattedAddress: result.location.formattedAddress,
+        });
+        setIsPreliminary(true);
+        setStep("assisted-questions");
+        return;
+      }
+
+      if (result.status === "BAD_INPUT") {
+        setErrorMessage(result.message ?? "We couldn't find that address.");
+        setStep("bad-address");
+        return;
+      }
+
+      // UPSTREAM_ERROR — our fault. Say so, offer a retry, and do NOT push the
+      // visitor into the questions form: that would record our outage as this
+      // address having no coverage, which is the exact mistake that killed the
+      // previous integration.
+      setErrorMessage("We couldn't reach our measurement service just now.");
+      setStep("upstream-error");
     } catch (error) {
       console.error("Error analyzing address:", error);
-      toast.error("Failed to analyze address. Please try again.");
-      setStep("address");
+      setErrorMessage("We couldn't reach our measurement service just now.");
+      setStep("upstream-error");
     }
-  }, [geocodeMutation, getRoofDataMutation]);
+  }, [utils]);
 
+  /** Shared by both paths: the lead is written before results are shown. */
   const handleLeadSubmit = useCallback(async (data: { name?: string; email?: string; phone?: string }) => {
-    if (!location || !roofData) return;
+    if (!location) return;
 
     setCustomerInfo(data);
     setShowLeadModal(false);
 
     try {
-      const result = await submitLeadMutation.mutateAsync({
+      const result: any = await submitLeadMutation.mutateAsync({
         ...data,
         address: location.formattedAddress,
-        latitude: location.lat.toString(),
-        longitude: location.lng.toString(),
-        roofData,
+        lat: location.lat,
+        lng: location.lng,
+        ...(assistedAnswers ? { homeownerAssisted: assistedAnswers } : {}),
       });
 
-      setEstimate(result.estimate);
-
-      // Send email via EmailJS
-      try {
-        await sendLeadEmail({
-          customerName: data.name || "Website Visitor",
-          customerPhone: data.phone || "Not provided",
-          customerEmail: data.email || "Not provided",
-          address: location.formattedAddress,
-          area: roofData.totalRoofArea,
-          pitch: roofData.averagePitch,
-          eaveLength: roofData.eaveLength,
-          valleyLength: roofData.ridgeValleyLength,
-          price: result.estimate.pricing.better, // Send the "Better" tier price
-        });
-        console.log("Lead email sent successfully");
-      } catch (emailError) {
-        console.error("Failed to send email:", emailError);
-        // Don't block the user flow if email fails
-      }
-
+      // Tiers come from the server. The client renders them; it does not price.
+      setEstimate({
+        roofData: {
+          totalRoofArea: result.roofAreaSqFt,
+          averagePitch: roofData?.averagePitch ?? 0,
+          eaveLength: roofData?.eaveLength ?? 0,
+          ridgeValleyLength: roofData?.ridgeValleyLength ?? 0,
+          satelliteImageUrl: roofData?.satelliteImageUrl ?? "",
+          solarApiAvailable: !result.preliminary,
+        },
+        adjustedArea: result.roofAreaSqFt,
+        hasPitchSurcharge: false,
+        pricing: result.pricing,
+      });
+      setIsPreliminary(Boolean(result.preliminary));
       setStep("results");
-      toast.success("Your estimate is ready!");
+      toast.success(result.preliminary ? "Your preliminary estimate is ready!" : "Your estimate is ready!");
     } catch (error) {
       console.error("Error submitting lead:", error);
-      toast.error("Failed to generate estimate. Please try again.");
+      toast.error("We couldn't submit that just now. Please try again.");
       setShowLeadModal(true);
+      setStep("lead-capture");
     }
-  }, [location, roofData, submitLeadMutation]);
+  }, [location, roofData, assistedAnswers, submitLeadMutation]);
 
-  const handleManualQuoteSubmit = useCallback(async (data: { name?: string; email?: string; phone?: string }) => {
-    if (!location) return;
-
-    setCustomerInfo(data);
-
-    try {
-      await requestManualQuoteMutation.mutateAsync({
-        ...data,
-        address: location.formattedAddress,
-        latitude: location.lat.toString(),
-        longitude: location.lng.toString(),
-      });
-
-      // Send email via EmailJS for manual quote request
-      try {
-        await sendLeadEmail({
-          customerName: data.name || "Website Visitor",
-          customerPhone: data.phone || "Not provided",
-          customerEmail: data.email || "Not provided",
-          address: location.formattedAddress,
-          area: 0,
-          pitch: 0,
-          eaveLength: 0,
-          valleyLength: 0,
-          price: 0,
-        });
-      } catch (emailError) {
-        console.error("Failed to send email:", emailError);
-      }
-
-      setStep("manual-submitted");
-      toast.success("Your quote request has been submitted!");
-    } catch (error) {
-      console.error("Error requesting manual quote:", error);
-      toast.error("Failed to submit request. Please try again.");
-    }
-  }, [location, requestManualQuoteMutation]);
+  /** NO_DATA path: collect the property answers, then capture the lead. */
+  const handleAssistedAnswers = useCallback((answers: HomeownerAssistedAnswers) => {
+    setAssistedAnswers(answers);
+    setRoofData(null);
+    setShowLeadModal(true);
+    setStep("lead-capture");
+  }, []);
 
   const handleDownloadPDF = useCallback(() => {
     if (!estimate || !location) return;
@@ -201,6 +208,9 @@ export default function Home() {
     setEstimate(null);
     setCustomerInfo({});
     setShowLeadModal(false);
+    setAssistedAnswers(null);
+    setIsPreliminary(false);
+    setErrorMessage(null);
   };
 
   return (
@@ -266,7 +276,7 @@ export default function Home() {
               <div className="mt-8 max-w-2xl mx-auto">
                 <AddressInput
                   onAddressSelect={handleAddressSelect}
-                  isLoading={geocodeMutation.isPending || getRoofDataMutation.isPending}
+                  isLoading={isMeasuring}
                 />
               </div>
 
@@ -321,53 +331,87 @@ export default function Home() {
         )}
 
         {/* Lead Capture Modal */}
-        {step === "lead-capture" && roofData && (
+        {step === "lead-capture" && (roofData || assistedAnswers) && (
           <LeadCaptureModal
             isOpen={showLeadModal}
             onClose={() => setShowLeadModal(false)}
             onSubmit={handleLeadSubmit}
             isLoading={submitLeadMutation.isPending}
-            roofArea={roofData.totalRoofArea}
+            roofArea={roofData?.totalRoofArea ?? 0}
           />
         )}
 
         {/* Results Step */}
         {step === "results" && estimate && location && (
-          <EstimateResults
-            estimate={estimate}
-            address={location.formattedAddress}
-            onDownloadPDF={handleDownloadPDF}
-            isGeneratingPDF={isGeneratingPDF}
-          />
-        )}
-
-        {/* Manual Quote Step */}
-        {step === "manual-quote" && location && roofData && (
-          <ManualQuoteForm
-            address={location.formattedAddress}
-            satelliteImageUrl={roofData.satelliteImageUrl}
-            onSubmit={handleManualQuoteSubmit}
-            isLoading={requestManualQuoteMutation.isPending}
-          />
-        )}
-
-        {/* Manual Quote Submitted */}
-        {step === "manual-submitted" && (
-          <div className="max-w-md mx-auto text-center space-y-6">
-            <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-              <CheckCircle2 className="h-10 w-10 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold">Request Submitted!</h2>
-            <p className="text-muted-foreground">
-              Thank you for your interest! Our team will review your property and contact you 
-              within 24 hours with a detailed quote.
-            </p>
-            <Button onClick={handleStartOver} className="mt-4">
-              <ArrowRight className="mr-2 h-4 w-4" />
-              Get Another Estimate
-            </Button>
+          <div className="space-y-4">
+            {isPreliminary && (
+              <div className="max-w-3xl mx-auto rounded-lg border border-amber-300/60 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
+                <p className="text-sm text-amber-900 dark:text-amber-200">
+                  <strong>Preliminary estimate</strong> — based on the details you provided, and
+                  confirmed at your free inspection.
+                </p>
+              </div>
+            )}
+            <EstimateResults
+              estimate={estimate}
+              address={location.formattedAddress}
+              onDownloadPDF={handleDownloadPDF}
+              isGeneratingPDF={isGeneratingPDF}
+            />
           </div>
         )}
+
+        {/* NO_DATA: Solar has no building here — ask the homeowner instead. */}
+        {step === "assisted-questions" && location && (
+          <HomeownerAssistedForm
+            address={location.formattedAddress}
+            onSubmit={handleAssistedAnswers}
+            isLoading={submitLeadMutation.isPending}
+          />
+        )}
+
+        {/* UPSTREAM_ERROR: our fault. A retry, not a detour into the form. */}
+        {step === "upstream-error" && (
+          <div className="max-w-md mx-auto text-center space-y-6">
+            <div className="w-20 h-20 mx-auto bg-amber-500/10 rounded-full flex items-center justify-center">
+              <AlertTriangle className="h-10 w-10 text-amber-500" />
+            </div>
+            <h2 className="text-2xl font-bold">Something went wrong on our end</h2>
+            <p className="text-muted-foreground">
+              {errorMessage ?? "We couldn't reach our measurement service just now."} This is our
+              problem, not your address — please try again in a moment.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={handleStartOver}>
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Try again
+              </Button>
+              <CallNowButton />
+            </div>
+          </div>
+        )}
+
+        {/* BAD_INPUT: the address itself didn't resolve. */}
+        {step === "bad-address" && (
+          <div className="max-w-md mx-auto text-center space-y-6">
+            <div className="w-20 h-20 mx-auto bg-muted rounded-full flex items-center justify-center">
+              <MapPinOff className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold">We couldn't find that address</h2>
+            <p className="text-muted-foreground">
+              {errorMessage ?? "Please check the address and try again."} Double-check the street
+              number and city, or give us a call and we'll look it up with you.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={handleStartOver}>
+                <ArrowRight className="mr-2 h-4 w-4" />
+                Try another address
+              </Button>
+              <CallNowButton />
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* Storm Damage CTA - Show on address step */}
