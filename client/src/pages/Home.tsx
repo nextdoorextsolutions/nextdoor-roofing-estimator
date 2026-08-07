@@ -37,6 +37,17 @@ import type { RoofData, EstimateResult } from "../../../shared/roofing";
  * funnel had one failure branch, so an outage and a genuine coverage gap looked
  * identical to the visitor and produced the same (wrong) conclusion for us.
  */
+/** Static satellite tile for the results page. Uses the browser key on purpose —
+ *  the server key must never appear in a URL the page loads. */
+function satelliteTileUrl(lat: number, lng: number): string {
+  const key = import.meta.env.VITE_GOOGLE_MAPS_KEY;
+  if (!key) return "";
+  return (
+    `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}` +
+    `&zoom=20&size=600x400&scale=2&maptype=satellite&key=${key}`
+  );
+}
+
 type Step =
   | "address"
   | "analyzing"
@@ -90,7 +101,7 @@ export default function Home() {
           averagePitch: result.measurement.pitchRise ?? 0,
           eaveLength: 0,
           ridgeValleyLength: 0,
-          satelliteImageUrl: "",
+          satelliteImageUrl: satelliteTileUrl(result.location.lat, result.location.lng),
           solarApiAvailable: true,
         });
         setIsPreliminary(false);
@@ -151,15 +162,21 @@ export default function Home() {
       setEstimate({
         roofData: {
           totalRoofArea: result.roofAreaSqFt,
-          averagePitch: roofData?.averagePitch ?? 0,
+          averagePitch: result.pricing.pitchRise ?? roofData?.averagePitch ?? 0,
           eaveLength: roofData?.eaveLength ?? 0,
           ridgeValleyLength: roofData?.ridgeValleyLength ?? 0,
-          satelliteImageUrl: roofData?.satelliteImageUrl ?? "",
+          satelliteImageUrl:
+            roofData?.satelliteImageUrl || satelliteTileUrl(location.lat, location.lng),
           solarApiAvailable: !result.preliminary,
         },
-        adjustedArea: result.roofAreaSqFt,
-        hasPitchSurcharge: false,
-        pricing: result.pricing,
+        adjustedArea: result.pricing.adjustedAreaSqFt,
+        squares: result.pricing.squares,
+        hasPitchSurcharge: Boolean(result.pricing.hasPitchSurcharge),
+        pricing: {
+          good: result.pricing.good,
+          better: result.pricing.better,
+          best: result.pricing.best,
+        },
       });
       setIsPreliminary(Boolean(result.preliminary));
       setStep("results");
