@@ -297,6 +297,7 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
         goodPrice={estimate.pricing.good}
         betterPrice={estimate.pricing.better}
         bestPrice={estimate.pricing.best}
+        financing={estimate.financing}
       />
 
       {/* Disclaimer */}

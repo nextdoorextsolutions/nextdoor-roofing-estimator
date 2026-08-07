@@ -27,10 +27,18 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 
+import type { FinancingRates } from "@shared/roofing";
+
 interface FinancingCalculatorProps {
   goodPrice: number;
   betterPrice: number;
   bestPrice: number;
+  /**
+   * Rates from the CRM's published pricing config (crm.getRoofData /
+   * submitEstimatorLead). When absent — older backend, direct render — the
+   * compiled fallbacks below apply, which mirror the CRM's own defaults.
+   */
+  financing?: FinancingRates;
 }
 
 interface FinancingTerm {
@@ -86,50 +94,71 @@ const RENEW_STANDARD_TERMS: FinancingTerm[] = [
   },
 ];
 
-// PACE Program Options (Property Tax Based) - Using factor-based calculations
-// Factor = Annual Assessment / Project Cost, then divide by 12 for monthly
-interface PaceTerm extends FinancingTerm {
-  factor: number; // Annual assessment factor
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// PACE (RenewPACE) — repaid as an ANNUAL assessment on the property tax bill.
+//
+// This is real assessment math, not a marketing factor:
+//
+//   amountFinanced   = projectCost × (1 + PACE_PROGRAM_FEE_RATE)
+//                      (PACE one-time program/district/recording fees are
+//                       capitalized into the assessment, not paid out of pocket)
+//   annualAssessment = amountFinanced × r ÷ (1 − (1+r)^−years)
+//                      + PACE_ANNUAL_ADMIN_FEE
+//   "monthly"        = annualAssessment ÷ 12 — a budgeting equivalent only.
+//                      PACE bills ONCE A YEAR via property taxes (or through
+//                      mortgage escrow); there are no 12 real payments.
+//
+// Annual amortization matters: an annual-payment loan at the same rate costs
+// slightly more per year than 12 monthly payments, so borrowing the monthly
+// formula here understates the tax bill. The previous implementation used
+// hardcoded "factors" that silently implied ~0.3–0.5% higher rates than the
+// APR shown beside them — the number on screen and the number charged must
+// come from the same arithmetic.
+//
+// ── RATE SHEET — UPDATE THIS BLOCK ONLY ──────────────────────────────────────
+// Renew quotes Florida PACE rates case-by-case; the live sheet is in the Renew
+// dealer portal. Public ranges as of 2026-08: FL PACE ~6–9%, Renew historical
+// 3.69–8.49%. The rates below are carried from the previous version (in-band)
+// and the fees are typical FL PACE figures — CONFIRM against the dealer portal
+// before quoting a homeowner.
+const PACE_PROGRAM_FEE_RATE = 0.05; // one-time, capitalized into the assessment
+const PACE_ANNUAL_ADMIN_FEE = 95; // $/yr assessment administration, each tax bill
 
-const PACE_TERMS: PaceTerm[] = [
-  { 
-    months: 120, 
-    apr: 7.49, 
-    factor: 0.148,
-    label: "10 years", 
+const PACE_TERMS: FinancingTerm[] = [
+  {
+    months: 120,
+    apr: 7.49,
+    label: "10 years",
     type: "pace",
     icon: <Leaf className="h-4 w-4 text-green-400" />,
-    highlight: "~7.49%"
+    highlight: "7.49%",
   },
-  { 
-    months: 180, 
-    apr: 7.99, 
-    factor: 0.120,
-    label: "15 years", 
+  {
+    months: 180,
+    apr: 7.99,
+    label: "15 years",
     type: "pace",
     icon: <Home className="h-4 w-4 text-green-400" />,
-    highlight: "~7.99%"
+    highlight: "7.99%",
   },
-  { 
-    months: 240, 
-    apr: 8.49, 
-    factor: 0.108,
-    label: "20 years", 
+  {
+    months: 240,
+    apr: 8.49,
+    label: "20 years",
     type: "pace",
     icon: <Building2 className="h-4 w-4 text-green-400" />,
-    highlight: "~8.49%"
+    highlight: "8.49%",
   },
-  { 
-    months: 300, 
-    apr: 8.99, 
-    factor: 0.103,
-    label: "25 years", 
+  {
+    months: 300,
+    apr: 8.99,
+    label: "25 years",
     type: "pace",
     icon: <Award className="h-4 w-4 text-green-400" />,
-    highlight: "~8.99%"
+    highlight: "8.99%",
   },
 ];
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Standard interest-based calculation for Renew Financial
 function calculateMonthlyPayment(principal: number, apr: number, months: number): number {
@@ -141,28 +170,93 @@ function calculateMonthlyPayment(principal: number, apr: number, months: number)
   return payment;
 }
 
-// Factor-based calculation for PACE program
-// Annual Assessment = Project Cost × Factor, Monthly = Annual / 12
-function calculatePaceMonthlyPayment(principal: number, factor: number): number {
-  const annualAssessment = principal * factor;
-  return annualAssessment / 12;
+/** What PACE actually finances: project cost plus the capitalized one-time fees. */
+function paceAmountFinanced(projectCost: number, feePct: number): number {
+  return projectCost * (1 + feePct / 100);
 }
 
-function calculateTotalCost(monthlyPayment: number, months: number): number {
-  return monthlyPayment * months;
+/** The number that appears on the property tax bill each year. */
+function paceAnnualAssessment(
+  projectCost: number,
+  apr: number,
+  months: number,
+  feePct: number,
+  adminFee: number,
+): number {
+  const years = months / 12;
+  const r = apr / 100;
+  const base = (paceAmountFinanced(projectCost, feePct) * r) / (1 - Math.pow(1 + r, -years));
+  return base + adminFee;
 }
 
-export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice }: FinancingCalculatorProps) {
+/** Monthly BUDGETING equivalent — PACE has no monthly payment. */
+function paceMonthlyEquivalent(
+  projectCost: number,
+  apr: number,
+  months: number,
+  feePct: number,
+  adminFee: number,
+): number {
+  return paceAnnualAssessment(projectCost, apr, months, feePct, adminFee) / 12;
+}
+
+// Icon pools for config-driven terms, in display order. Extra terms beyond the
+// pool reuse the last icon rather than crashing on an index miss.
+const STANDARD_TERM_ICONS = [
+  <Sparkles className="h-4 w-4 text-yellow-400" />,
+  <Star className="h-4 w-4 text-yellow-400" />,
+  <TrendingUp className="h-4 w-4 text-primary" />,
+  <Timer className="h-4 w-4 text-primary" />,
+  <Clock className="h-4 w-4 text-blue-400" />,
+];
+const PACE_TERM_ICONS = [
+  <Leaf className="h-4 w-4 text-green-400" />,
+  <Home className="h-4 w-4 text-green-400" />,
+  <Building2 className="h-4 w-4 text-green-400" />,
+  <Award className="h-4 w-4 text-green-400" />,
+];
+const iconAt = (pool: React.ReactNode[], i: number) => pool[Math.min(i, pool.length - 1)];
+const termLabelFor = (months: number) => (months < 36 ? `${months} months` : `${months / 12} years`);
+
+export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice, financing }: FinancingCalculatorProps) {
   const [financingType, setFinancingType] = useState<"renew" | "pace">("renew");
   const [selectedTerm, setSelectedTerm] = useState<string>("24");
   const [selectedTier, setSelectedTier] = useState<"good" | "better" | "best">("better");
 
-  const terms = financingType === "renew" ? RENEW_STANDARD_TERMS : PACE_TERMS;
-  
-  // Reset term when switching financing type
+  // Config-driven terms when the backend sent them; compiled fallbacks otherwise.
+  const standardTerms: FinancingTerm[] = financing
+    ? financing.standardTerms.map((t, i) => ({
+        months: t.months,
+        apr: t.apr,
+        type: "standard" as const,
+        label: termLabelFor(t.months),
+        icon: iconAt(STANDARD_TERM_ICONS, i),
+        highlight: t.apr === 0 ? "0% APR" : `${t.apr}%`,
+      }))
+    : RENEW_STANDARD_TERMS;
+  const paceTerms: FinancingTerm[] = financing
+    ? financing.pace.terms.map((t, i) => ({
+        months: t.years * 12,
+        apr: t.rate,
+        type: "pace" as const,
+        label: `${t.years} years`,
+        icon: iconAt(PACE_TERM_ICONS, i),
+        highlight: `${t.rate}%`,
+      }))
+    : PACE_TERMS;
+  const paceFeePct = financing ? financing.pace.programFeePct : PACE_PROGRAM_FEE_RATE * 100;
+  const paceAdminFee = financing ? financing.pace.annualAdminFee : PACE_ANNUAL_ADMIN_FEE;
+
+  const terms = financingType === "renew" ? standardTerms : paceTerms;
+
+  // Reset term when switching financing type; the preferred defaults (24 mo /
+  // 15 yr) may not exist in a config-driven list, so fall back to what does.
   const handleFinancingTypeChange = (type: "renew" | "pace") => {
     setFinancingType(type);
-    setSelectedTerm(type === "renew" ? "24" : "180");
+    const list = type === "renew" ? standardTerms : paceTerms;
+    const preferred = type === "renew" ? 24 : 180;
+    const target = list.find((t) => t.months === preferred) ?? list[Math.min(1, list.length - 1)];
+    setSelectedTerm(String(target.months));
   };
 
   const term = terms.find(t => t.months.toString() === selectedTerm) || terms[0];
@@ -192,31 +286,32 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
   };
 
   const selectedPrice = prices[selectedTier];
-  
-  // Use factor-based calculation for PACE, standard calculation for Renew
+
   const isPace = financingType === "pace";
-  const paceTerm = term as PaceTerm;
-  
-  const monthlyPayment = isPace && paceTerm.factor
-    ? calculatePaceMonthlyPayment(selectedPrice, paceTerm.factor)
+
+  const monthlyPayment = isPace
+    ? paceMonthlyEquivalent(selectedPrice, term.apr, term.months, paceFeePct, paceAdminFee)
     : calculateMonthlyPayment(selectedPrice, term.apr, term.months);
-  
-  const totalCost = calculateTotalCost(monthlyPayment, term.months);
-  const totalInterest = totalCost - selectedPrice;
-  
-  // Annual assessment for PACE display
-  const annualAssessment = isPace && paceTerm.factor ? selectedPrice * paceTerm.factor : 0;
+
+  // PACE repays whole annual assessments; Renew repays real monthly payments.
+  const annualAssessment = isPace
+    ? paceAnnualAssessment(selectedPrice, term.apr, term.months, paceFeePct, paceAdminFee)
+    : 0;
+  const amountFinanced = isPace ? paceAmountFinanced(selectedPrice, paceFeePct) : selectedPrice;
+  const totalCost = isPace
+    ? annualAssessment * (term.months / 12)
+    : monthlyPayment * term.months;
 
   // Calculate monthly payments for all tiers at selected term
   const allTierPayments = {
-    good: isPace && paceTerm.factor
-      ? calculatePaceMonthlyPayment(goodPrice, paceTerm.factor)
+    good: isPace
+      ? paceMonthlyEquivalent(goodPrice, term.apr, term.months, paceFeePct, paceAdminFee)
       : calculateMonthlyPayment(goodPrice, term.apr, term.months),
-    better: isPace && paceTerm.factor
-      ? calculatePaceMonthlyPayment(betterPrice, paceTerm.factor)
+    better: isPace
+      ? paceMonthlyEquivalent(betterPrice, term.apr, term.months, paceFeePct, paceAdminFee)
       : calculateMonthlyPayment(betterPrice, term.apr, term.months),
-    best: isPace && paceTerm.factor
-      ? calculatePaceMonthlyPayment(bestPrice, paceTerm.factor)
+    best: isPace
+      ? paceMonthlyEquivalent(bestPrice, term.apr, term.months, paceFeePct, paceAdminFee)
       : calculateMonthlyPayment(bestPrice, term.apr, term.months),
   };
 
@@ -314,7 +409,7 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
                       <Clock className="h-3 w-3" /> Up to 25 Years
                     </Badge>
                     <Badge variant="outline" className="border-green-500/50 text-green-400 text-xs flex items-center gap-1">
-                      <PiggyBank className="h-3 w-3" /> Tax Deductible
+                      <PiggyBank className="h-3 w-3" /> Interest May Be Tax-Deductible
                     </Badge>
                     <Badge variant="outline" className="border-green-500/50 text-green-400 text-xs flex items-center gap-1">
                       <Home className="h-3 w-3" /> Transfers with Sale
@@ -401,7 +496,9 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
               <Banknote className={`h-8 w-8 ${financingType === "pace" ? "text-green-400" : "text-primary"}`} />
             </div>
           </div>
-          <p className="text-gray-400 text-sm mb-1">Your Estimated Monthly Payment</p>
+          <p className="text-gray-400 text-sm mb-1">
+            {financingType === "pace" ? "Estimated Monthly Set-Aside" : "Your Estimated Monthly Payment"}
+          </p>
           <div className="flex items-center justify-center gap-2">
             <span className={`text-5xl font-bold ${financingType === "pace" ? "text-green-400" : "text-primary"}`}>
               ${Math.round(monthlyPayment).toLocaleString()}
@@ -424,7 +521,11 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
               </p>
               <p className="text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
                 <Home className="h-3 w-3" />
-                Paid through your property tax bill
+                Billed once a year on your property tax bill (or via mortgage escrow) — not a monthly bill
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Amount financed: ${Math.round(amountFinanced).toLocaleString()} (project cost + one-time program fees)
+                {" "}· includes ${paceAdminFee}/yr admin fee
               </p>
             </div>
           )}
@@ -456,7 +557,10 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
             }`}>
               <Percent className={`h-5 w-5 ${term.apr === 0 ? "text-yellow-400" : financingType === "pace" ? "text-green-400" : "text-primary"}`} />
             </div>
-            <p className="text-xs text-gray-400">Fixed APR</p>
+            {/* PACE quotes an interest rate; the one-time fees financed on top
+                mean the true APR is higher. Calling this "APR" would understate
+                the cost of money — the fees are itemized above instead. */}
+            <p className="text-xs text-gray-400">{isPace ? "Interest Rate" : "Fixed APR"}</p>
             <p className={`text-lg font-semibold ${term.apr === 0 ? "text-yellow-400" : "text-white"}`}>{term.apr}%</p>
           </div>
           <div className="bg-gray-800/30 rounded-lg p-4 text-center border border-gray-700/50">
@@ -465,7 +569,7 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
             }`}>
               <CreditCard className={`h-5 w-5 ${financingType === "pace" ? "text-green-400" : "text-primary"}`} />
             </div>
-            <p className="text-xs text-gray-400">Total Cost</p>
+            <p className="text-xs text-gray-400">{isPace ? "Total Repaid" : "Total Cost"}</p>
             <p className="text-lg font-semibold text-white">${Math.round(totalCost).toLocaleString()}</p>
           </div>
         </div>
@@ -474,7 +578,7 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
         <div className="border-t border-gray-700 pt-6">
           <h4 className="text-white font-medium mb-4 text-center flex items-center justify-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" />
-            Monthly Payments by Package
+            {isPace ? "Monthly Set-Aside by Package" : "Monthly Payments by Package"}
           </h4>
           <div className="grid grid-cols-3 gap-3">
             {(["good", "better", "best"] as const).map((tier) => (
@@ -548,7 +652,7 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
         {/* Disclaimer */}
         <div className="mt-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
           <p className="text-xs text-gray-400 text-center leading-relaxed">
-            <span className="text-yellow-500 font-medium">Important:</span> These are estimates only. Final financing terms, rates, and monthly payments are subject to the financing provider's approval and may vary based on creditworthiness, property eligibility, and program availability. PACE financing is repaid through your property tax bill and requires property owner consent. Interest deductibility should be verified with a qualified tax advisor. Contact us or the financing provider directly for exact terms and to begin the application process.
+            <span className="text-yellow-500 font-medium">Important:</span> These are estimates only. Final financing terms, rates, and payments are subject to the financing provider's approval and may vary based on creditworthiness, property eligibility, and program availability. PACE financing is repaid as an annual assessment on your property tax bill (or through mortgage escrow), includes one-time program fees financed into the assessment, and your first assessment may also include interest capitalized between funding and your first tax bill. PACE estimates here exclude that first-year capitalized interest. Interest deductibility should be verified with a qualified tax advisor. Contact us or the financing provider directly for exact terms and to begin the application process.
           </p>
         </div>
       </CardContent>
