@@ -172,6 +172,7 @@ export default function Home() {
         adjustedArea: result.pricing.adjustedAreaSqFt,
         squares: result.pricing.squares,
         hasPitchSurcharge: Boolean(result.pricing.hasPitchSurcharge),
+        financing: result.financing,
         pricing: {
           good: result.pricing.good,
           better: result.pricing.better,

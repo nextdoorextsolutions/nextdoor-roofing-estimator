@@ -35,6 +35,18 @@ export interface EstimateResult {
     better: number;
     best: number;
   };
+  /** Display rates from the CRM's published pricing config. Optional so the
+   *  page still renders (on compiled fallbacks) against an older backend. */
+  financing?: FinancingRates;
+}
+
+export interface FinancingRates {
+  standardTerms: Array<{ months: number; apr: number }>;
+  pace: {
+    programFeePct: number;
+    annualAdminFee: number;
+    terms: Array<{ years: number; rate: number }>;
+  };
 }
 
 export interface LeadInfo {

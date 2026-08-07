@@ -27,10 +27,18 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 
+import type { FinancingRates } from "@shared/roofing";
+
 interface FinancingCalculatorProps {
   goodPrice: number;
   betterPrice: number;
   bestPrice: number;
+  /**
+   * Rates from the CRM's published pricing config (crm.getRoofData /
+   * submitEstimatorLead). When absent — older backend, direct render — the
+   * compiled fallbacks below apply, which mirror the CRM's own defaults.
+   */
+  financing?: FinancingRates;
 }
 
 interface FinancingTerm {
@@ -163,34 +171,92 @@ function calculateMonthlyPayment(principal: number, apr: number, months: number)
 }
 
 /** What PACE actually finances: project cost plus the capitalized one-time fees. */
-function paceAmountFinanced(projectCost: number): number {
-  return projectCost * (1 + PACE_PROGRAM_FEE_RATE);
+function paceAmountFinanced(projectCost: number, feePct: number): number {
+  return projectCost * (1 + feePct / 100);
 }
 
 /** The number that appears on the property tax bill each year. */
-function paceAnnualAssessment(projectCost: number, apr: number, months: number): number {
+function paceAnnualAssessment(
+  projectCost: number,
+  apr: number,
+  months: number,
+  feePct: number,
+  adminFee: number,
+): number {
   const years = months / 12;
   const r = apr / 100;
-  const base = (paceAmountFinanced(projectCost) * r) / (1 - Math.pow(1 + r, -years));
-  return base + PACE_ANNUAL_ADMIN_FEE;
+  const base = (paceAmountFinanced(projectCost, feePct) * r) / (1 - Math.pow(1 + r, -years));
+  return base + adminFee;
 }
 
 /** Monthly BUDGETING equivalent — PACE has no monthly payment. */
-function paceMonthlyEquivalent(projectCost: number, apr: number, months: number): number {
-  return paceAnnualAssessment(projectCost, apr, months) / 12;
+function paceMonthlyEquivalent(
+  projectCost: number,
+  apr: number,
+  months: number,
+  feePct: number,
+  adminFee: number,
+): number {
+  return paceAnnualAssessment(projectCost, apr, months, feePct, adminFee) / 12;
 }
 
-export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice }: FinancingCalculatorProps) {
+// Icon pools for config-driven terms, in display order. Extra terms beyond the
+// pool reuse the last icon rather than crashing on an index miss.
+const STANDARD_TERM_ICONS = [
+  <Sparkles className="h-4 w-4 text-yellow-400" />,
+  <Star className="h-4 w-4 text-yellow-400" />,
+  <TrendingUp className="h-4 w-4 text-primary" />,
+  <Timer className="h-4 w-4 text-primary" />,
+  <Clock className="h-4 w-4 text-blue-400" />,
+];
+const PACE_TERM_ICONS = [
+  <Leaf className="h-4 w-4 text-green-400" />,
+  <Home className="h-4 w-4 text-green-400" />,
+  <Building2 className="h-4 w-4 text-green-400" />,
+  <Award className="h-4 w-4 text-green-400" />,
+];
+const iconAt = (pool: React.ReactNode[], i: number) => pool[Math.min(i, pool.length - 1)];
+const termLabelFor = (months: number) => (months < 36 ? `${months} months` : `${months / 12} years`);
+
+export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice, financing }: FinancingCalculatorProps) {
   const [financingType, setFinancingType] = useState<"renew" | "pace">("renew");
   const [selectedTerm, setSelectedTerm] = useState<string>("24");
   const [selectedTier, setSelectedTier] = useState<"good" | "better" | "best">("better");
 
-  const terms = financingType === "renew" ? RENEW_STANDARD_TERMS : PACE_TERMS;
-  
-  // Reset term when switching financing type
+  // Config-driven terms when the backend sent them; compiled fallbacks otherwise.
+  const standardTerms: FinancingTerm[] = financing
+    ? financing.standardTerms.map((t, i) => ({
+        months: t.months,
+        apr: t.apr,
+        type: "standard" as const,
+        label: termLabelFor(t.months),
+        icon: iconAt(STANDARD_TERM_ICONS, i),
+        highlight: t.apr === 0 ? "0% APR" : `${t.apr}%`,
+      }))
+    : RENEW_STANDARD_TERMS;
+  const paceTerms: FinancingTerm[] = financing
+    ? financing.pace.terms.map((t, i) => ({
+        months: t.years * 12,
+        apr: t.rate,
+        type: "pace" as const,
+        label: `${t.years} years`,
+        icon: iconAt(PACE_TERM_ICONS, i),
+        highlight: `${t.rate}%`,
+      }))
+    : PACE_TERMS;
+  const paceFeePct = financing ? financing.pace.programFeePct : PACE_PROGRAM_FEE_RATE * 100;
+  const paceAdminFee = financing ? financing.pace.annualAdminFee : PACE_ANNUAL_ADMIN_FEE;
+
+  const terms = financingType === "renew" ? standardTerms : paceTerms;
+
+  // Reset term when switching financing type; the preferred defaults (24 mo /
+  // 15 yr) may not exist in a config-driven list, so fall back to what does.
   const handleFinancingTypeChange = (type: "renew" | "pace") => {
     setFinancingType(type);
-    setSelectedTerm(type === "renew" ? "24" : "180");
+    const list = type === "renew" ? standardTerms : paceTerms;
+    const preferred = type === "renew" ? 24 : 180;
+    const target = list.find((t) => t.months === preferred) ?? list[Math.min(1, list.length - 1)];
+    setSelectedTerm(String(target.months));
   };
 
   const term = terms.find(t => t.months.toString() === selectedTerm) || terms[0];
@@ -224,12 +290,14 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
   const isPace = financingType === "pace";
 
   const monthlyPayment = isPace
-    ? paceMonthlyEquivalent(selectedPrice, term.apr, term.months)
+    ? paceMonthlyEquivalent(selectedPrice, term.apr, term.months, paceFeePct, paceAdminFee)
     : calculateMonthlyPayment(selectedPrice, term.apr, term.months);
 
   // PACE repays whole annual assessments; Renew repays real monthly payments.
-  const annualAssessment = isPace ? paceAnnualAssessment(selectedPrice, term.apr, term.months) : 0;
-  const amountFinanced = isPace ? paceAmountFinanced(selectedPrice) : selectedPrice;
+  const annualAssessment = isPace
+    ? paceAnnualAssessment(selectedPrice, term.apr, term.months, paceFeePct, paceAdminFee)
+    : 0;
+  const amountFinanced = isPace ? paceAmountFinanced(selectedPrice, paceFeePct) : selectedPrice;
   const totalCost = isPace
     ? annualAssessment * (term.months / 12)
     : monthlyPayment * term.months;
@@ -237,13 +305,13 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
   // Calculate monthly payments for all tiers at selected term
   const allTierPayments = {
     good: isPace
-      ? paceMonthlyEquivalent(goodPrice, term.apr, term.months)
+      ? paceMonthlyEquivalent(goodPrice, term.apr, term.months, paceFeePct, paceAdminFee)
       : calculateMonthlyPayment(goodPrice, term.apr, term.months),
     better: isPace
-      ? paceMonthlyEquivalent(betterPrice, term.apr, term.months)
+      ? paceMonthlyEquivalent(betterPrice, term.apr, term.months, paceFeePct, paceAdminFee)
       : calculateMonthlyPayment(betterPrice, term.apr, term.months),
     best: isPace
-      ? paceMonthlyEquivalent(bestPrice, term.apr, term.months)
+      ? paceMonthlyEquivalent(bestPrice, term.apr, term.months, paceFeePct, paceAdminFee)
       : calculateMonthlyPayment(bestPrice, term.apr, term.months),
   };
 
@@ -457,7 +525,7 @@ export default function FinancingCalculator({ goodPrice, betterPrice, bestPrice 
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Amount financed: ${Math.round(amountFinanced).toLocaleString()} (project cost + one-time program fees)
-                {" "}· includes ${PACE_ANNUAL_ADMIN_FEE}/yr admin fee
+                {" "}· includes ${paceAdminFee}/yr admin fee
               </p>
             </div>
           )}
