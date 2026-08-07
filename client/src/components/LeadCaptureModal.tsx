@@ -29,27 +29,23 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmit, isLoading, roofAre
     e.preventDefault();
     setError("");
 
-    // Validate name is required
-    if (!name.trim()) {
-      setError("Please enter your name");
+    // At least one way to reach them — matching what the backend accepts.
+    // Demanding both a name AND an email was stricter than the lead write, so
+    // it turned reachable leads (phone-only, name-only) into abandonment.
+    if (!name.trim() && !email.trim() && !phone.trim()) {
+      setError("Please give us a name, email, or phone number so we can reach you");
       return;
     }
 
-    // Validate email is required
-    if (!email.trim()) {
-      setError("Please enter your email address");
-      return;
-    }
-
-    // Validate email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // Format is only enforced on an address they actually typed.
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address");
       return;
     }
 
     onSubmit({
-      name: name.trim(),
-      email: email.trim(),
+      name: name.trim() || undefined,
+      email: email.trim() || undefined,
       phone: phone.trim() || undefined,
     });
   };
@@ -87,7 +83,6 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmit, isLoading, roofAre
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isLoading}
-              required
             />
           </div>
 
@@ -103,7 +98,6 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmit, isLoading, roofAre
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              required
             />
           </div>
 
