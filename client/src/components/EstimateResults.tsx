@@ -142,9 +142,6 @@ export function EstimateResults({ estimate, address, onDownloadPDF, isGenerating
                 <div className="text-4xl font-bold text-foreground">
                   ${price.toLocaleString()}
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  ${Math.round(price / squares).toLocaleString()}/square
-                </p>
                 
                 {/* Warranty Highlights */}
                 <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 text-left">
